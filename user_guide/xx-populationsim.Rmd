@@ -1,0 +1,139 @@
+|# Customizable household data using Population Sim
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, results='hide')
+```
+
+## Introduction
+The purpose of this module extension is to enable users to not only input different household data, but to introduce _additional_ data into the household module, such as race, ethnicity, and other critical equity measures that have regional impacts.
+
+One of the basic components of VisionEval is the household population being modeled. This population contains key demographic attributes for transportation modeling, such as age, income, employment, and household composition (i.e., the types of persons in each household). However, a common challenge in transportation modeling is the "curse of dimensionality" as variables are added to the model it exponentially grows the possible combinations. Since VisionEval is intended to be lightweight, it only includes a minimum of demographic features. However, it is important to empower users to incorporate additional variables specific to their needs.
+
+
+**Note on the usage of appended data:** One paramount consideration when adding population variables is whether the variable *influences* travel behavior or is merely impacted by travel behavior. It is important to understand that additional population data are appended to the population for post-processing analysis, and *does not* influence travel behavior. For example, language speaking abilities or persons with disabilities might strongly influence travel behavior. Including these features in the population data would not be valuable as VisionEval does not yet model at this level. A feasible example would be to append the data with race and ethnicity features for a post-processing analysis to measure pollution impacts on race/ethnicity in different regions.
+
+***>>>>>COMMENT: Does Task 5.3 relate to to influencing or just automating the process?***
+
+
+### A Primer on Population Synthesis
+Population synthesis is essentially the process of expanding a small disaggregated data sample (i.e., one record per household) through replication, to match aggregated total population count. The challenge is that the sample data is almost never a perfect sample. When the sample data is expanded to match one variable, it typically will cause the other variables to become poorly fit. To mitigate this, population synthesis iteratively fits each variable until the total error converges. An additional challenge in population synthesis is in handling multilevel data with both individual persons and households that contain persons. Matching all target total counts with that many degrees of freedom can be difficult and computationally intensive.
+
+
+## VESimHouseholds Module
+The standard VESimHouseholds module in VisionEval performs population synthesis to generate base data for households. This is done using PUMS data as the seed (i.e., the disaggregated sample data to be expanded) and the user input files for the target totals:
+
+- **Seed data** (located in the module package, see Build Process[**LINK**] for modifying seed data):
+  - pums_household.csv
+  - pums_persons.csv
+- **Target totals** (located in model directory inputs):
+  - azone_hh_pop_by_age.csv
+  - azone_hhsize_targets.csv
+  - azone_gq_pop_by_age.csv
+
+For more details, see the VESimHouseholds module specific documentation: [VESimHouseholds/inst/module_docs/CreateHouseholds.md](https://github.com/VisionEval/VisionEval/blob/master/sources/modules/VESimHouseholds/inst/module_docs/CreateHouseholds.md)
+
+The output of the VESimHouseholds population synthesizer is a table in the datastore with the following attributes:
+
+- **NAME** - The dataset name.
+- **TABLE** - The table in the datastore that the data is retrieved from.
+- **GROUP** - The group in the datastore where the table is located. Note that the datastore has a group named 'Global' and groups for every model run year. For example, if the model run years are 2010 and 2050, then the datastore will have a group named '2010' and a group named '2050'. If the value for 'GROUP' is 'Year', then the dataset will exist in each model run year. If the value for 'GROUP' is 'BaseYear' then the dataset will only exist in the base year group (e.g. '2010'). If the value for 'GROUP' is 'Global' then the dataset will only exist in the 'Global' group.
+- **TYPE** - The data type. The framework uses the type to check units and inputs. Refer to the model system design and users guide for information on allowed types.
+- **UNITS** - The units that input values need to represent. Some data types have defined units that are represented as abbreviations or combinations of abbreviations. For example 'MI/HR' means miles per hour. Many of these abbreviations are self evident, but the VisionEval model system design and users guide should be consulted.
+- **PROHIBIT** - Values that are prohibited. Values in the datastore do not meet any of the listed conditions.
+- **ISELEMENTOF** - Categorical values that are permitted. Values in the datastore are one or more of the listed values.
+- **DESCRIPTION** - A description of the data.
+
+|NAME      |TABLE     |GROUP |TYPE       |UNITS    |PROHIBIT |DESCRIPTION                                                                  |
+|:---------|:---------|:-----|:----------|:--------|:--------|:----------------------------------------------------------------------------|
+|Azone     |Household |Year  |character  |ID       |         |Azone ID                                                                     |
+|Marea     |Household |Year  |character  |ID       |         |Marea ID                                                                     |
+|HhId      |Household |Year  |character  |ID       |         |Unique household ID                                                          |
+|HhSize    |Household |Year  |integer    |PRSN     |NA, <= 0 |Number of persons                                                            |
+|HhType    |Household |Year  |character  |category |         |Coded household age composition (e.g. 2-1-0-2-0-0) or Grp for group quarters |
+|Age0to14  |Household |Year  |integer    |PRSN     |NA, < 0  |Persons in 0 to 14 year old age group                                        |
+|Age15to19 |Household |Year  |integer    |PRSN     |NA, < 0  |Persons in 15 to 19 year old age group                                       |
+|Age20to29 |Household |Year  |integer    |PRSN     |NA, < 0  |Persons in 20 to 29 year old age group                                       |
+|Age30to54 |Household |Year  |integer    |PRSN     |NA, < 0  |Persons in 30 to 54 year old age group                                       |
+|Age55to64 |Household |Year  |integer    |PRSN     |NA, < 0  |Persons in 55 to 64 year old age group                                       |
+|Age65Plus |Household |Year  |integer    |PRSN     |NA, < 0  |Persons in 65 or older age group                                             |
+
+An example table can be conceptualized as in the example below. However, the actual data is stored as a list of vectors (i.e., arrays) in the datastore.
+
+| Azone | Marea | HhId    | HhSize | HhType      | Age0to14 | Age15to19 | Age20to29 | Age30to54 | Age55to64 | Age65Plus |
+| ----- | ----- | ------- | ------ | ----------- | -------- | --------- | --------- | --------- | --------- | --------- |
+| RVMPO | RVMPO | RVMPO-1 | 2      | 0-0-0-0-2-0 | 0        | 0         | 0         | 0         | 2         | 0         |
+| RVMPO | RVMPO | RVMPO-2 | 3      | 1-0-1-1-0-0 | 1        | 0         | 1         | 1         | 0         | 0         |
+| RVMPO | RVMPO | RVMPO-3 | 3      | 0-0-0-3-0-0 | 0        | 0         | 0         | 3         | 0         | 0         |
+| RVMPO | RVMPO | RVMPO-4 | 5      | 2-1-0-2-0-0 | 2        | 1         | 0         | 2         | 0         | 0         |
+| RVMPO | RVMPO | RVMPO-5 | 2      | 0-0-0-0-0-2 | 0        | 0         | 0         | 0         | 0         | 2         |
+| RVMPO | RVMPO | RVMPO-6 | 2      | 0-0-0-0-2-0 | 0        | 0         | 0         | 0         | 2         | 0         |
+
+It should be noted there that the results are at the household level, meaning that there is one record per household, not per person. The person-level attributes (i.e., age group) are effectively stored at the household level as frequencies. This means that any additional data appened at the person-level will need to be stored in a separate table and key-referenced by household ID.
+
+
+## PopulationSim
+There are a variety of third-party population synthesizers available as commercial or open source products. This guide will go through integration with the open source synthesizer PopulationSim (https://activitysim.github.io/populationsim/). Although feasible that other synthesizers can be used, the integration scripts are tailored to the inputs and outputs of PopulationSim.
+
+PopulationSim is fundamentally similar to the population synthesizer in VisionEval's VESimHouseholds package in that it takes a disaggregated sample data seed and iteratively expands and fits it to aggregated target totals. However, unlike VisionEval, PopulationSim will output separate tables for both persons and households.
+
+PopulationSim operates within working-directory with the following structure:
+
+- Working Directory Contents:
+| File                  | Description                                                                                            |
+|-----------------------|--------------------------------------------------------------------------------------------------------|
+| run_populationsim.py  | Python script that orchestrates a PopulationSim run                                                    |
+| /configs              | Sub-directory containing control specifications and configuration settings                             |
+| /configs_mp           | Sub-directory containing configuration settings for running multi-processed if applicable              |
+| /data                 | Sub-directory containing all input files                                                               |
+| /output               | Sub-directory containing all outputs, summaries and intermediate files                                 |
+
+
+The key input and output files are:
+
+- */data* Sub-directory Contents:
+| File                                | Description                                                          |
+|-------------------------------------|----------------------------------------------------------------------|
+| control_totals_GEOG_NAME.csv        | Marginal control totals at each spatial resolution named *GEOG_NAME* (e.g., control_totals_tract or control_totals_taz) |
+| geo_crosswalk.csv                   | Geographic cross-walk file                                           |
+| seed_households.csv                 | Seed sample of households                                            |
+| seed_persons.csv                    | Seed sample of persons                                               |
+
+- */output* Sub-directory Contents (populated at the end of a PopulationSim run):\
+This sub-directory is populated at the end of the PopulationSim run. The output can return a variety of useful outputs, such as summary of fit or weights, see [PopulationSim inputs and outputs](https://activitysim.github.io/populationsim/application_configuration.html#inputs-outputs) for a more detailed list of outputs and configuration.
+| File                            | Description                                                                             |
+|---------------------------------|-----------------------------------------------------------------------------------------|
+| synthetic_households.csv        | Fully expanded synthetic population of households.                                      |
+| synthetic_persons.csv           | Fully expanded synthetic population of persons.                                         |
+
+
+***>>>>>COMMENT: I think it's probably best to just pass the .csv files rather than have users mess with the HDF5 file even though it is likely more computationally efficient to use the HDF5 pipeline***
+
+
+The geographic crosswalk file is used to convert between different spatial zones, such as which Census tracts are associated with each region. This input file is critical to translating the synthesized population to VisionEval's Azone/Bzone system.
+
+| TAZ  | BLOCK GROUP | TRACT  | PUMA  | REGION  |
+|------|-------------|--------|-------|---------|
+| 475  | 3           | 100    | 600   | 1       |
+| 476  | 3           | 100    | 600   | 1       |
+| 232  | 45          | 100    | 600   | 1       |
+| 247  | 45          | 202    | 600   | 1       |
+| 248  | 45          | 202    | 600   | 1       |
+
+
+## Case Study 1 -- Appending population data with race and ethnicity
+
+
+<b>
+>>>>>>COMMENT: Proposed integration method & notes
+
+1. Modify VESimHouseholds source code to detect pre-synthesized population data in the *\inputs* folder (e.g., synthetic_persons.csv and synthetic_households.csv). If detected, VESimHouseholds will not run its own population synthesis and load the data instead.
+2. Write new VESimHouseholds function that:
+   1. loads the pre-synthesized data,
+   2. separates the base and appended attributes, and
+   3. creates the formatted VisionEval datatores.
+3. Specify/Constrain required variables to generate for VE (e.g., age)
+
+- Might be able to re-use some of the UrbanSim-to-VE scripts
+- Uncertain if datastore process be generalized so that users can datastore-ify any synthetic data variable they want?
+
+</b>
