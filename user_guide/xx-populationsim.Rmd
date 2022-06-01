@@ -577,18 +577,13 @@ The geographic crosswalk file is used to convert between different spatial zones
 
 ## Case Study 1 -- Appending population data with race and ethnicity
 
-
-<b>
->>>>>>COMMENT: Proposed integration method & notes
-
+>PLACEHOLDER TEXT
+Proposed integration method & notes
 1. Modify VESimHouseholds source code to detect pre-synthesized population data in the *\inputs* folder (e.g., synthetic_persons.csv and synthetic_households.csv). If detected, VESimHouseholds will not run its own population synthesis and load the data instead.
 2. Write new VESimHouseholds function that:
    1. loads the pre-synthesized data,
    2. separates the base and appended attributes, and
    3. creates the formatted VisionEval datatores.
 3. Specify/Constrain required variables to generate for VE (e.g., age)
-
 - Might be able to re-use some of the UrbanSim-to-VE scripts
 - Uncertain if datastore process be generalized so that users can datastore-ify any synthetic data variable they want?
-
-</b>
