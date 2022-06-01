@@ -1,38 +1,187 @@
-|# Customizable household data using Population Sim
+# Customizable household data using Population Sim
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, results='hide')
 ```
 
 ## Introduction
-The purpose of this module extension is to enable users to not only input different household data, but to introduce _additional_ data into the household module, such as race, ethnicity, and other critical equity measures that have regional impacts.
+This documentation describes the VESimHouseholds package. The purpose is to orient users to the mechanics of the VESimHouseholds package and thoroughly describe its inputs and outputs so that users can implement the package using customizable local data.
 
-One of the basic components of VisionEval is the household population being modeled. This population contains key demographic attributes for transportation modeling, such as age, income, employment, and household composition (i.e., the types of persons in each household). However, a common challenge in transportation modeling is the "curse of dimensionality" as variables are added to the model it exponentially grows the possible combinations. Since VisionEval is intended to be lightweight, it only includes a minimum of demographic features. However, it is important to empower users to incorporate additional variables specific to their needs.
+One of the basic components of VisionEval is the household population being modeled. This population contains key demographic attributes for transportation modeling, such as age, income, employment, and household composition (i.e., the types of persons in each household). A common challenge in transportation modeling is high-dimensional data. As variables are added, the database grows exponentially. Since VisionEval is intended to be lightweight, it only includes a minimum of demographic features. However, it is important to empower users to incorporate additional variables specific to their needs.
+
+This guide is divided into two main sections:
+
+1. **VESimHouseholds** package inputs, mechanics, and outputs are described. Within this section is a description of the individual modules used in the package and their contribution to the final household population data. The specific modules are:
+   - CreateHouseholds
+   - PredictWorkers
+   - AssignLifeCycle
+   - PredictIncome
 
 
-**Note on the usage of appended data:** One paramount consideration when adding population variables is whether the variable *influences* travel behavior or is merely impacted by travel behavior. It is important to understand that additional population data are appended to the population for post-processing analysis, and *does not* influence travel behavior. For example, language speaking abilities or persons with disabilities might strongly influence travel behavior. Including these features in the population data would not be valuable as VisionEval does not yet model at this level. A feasible example would be to append the data with race and ethnicity features for a post-processing analysis to measure pollution impacts on race/ethnicity in different regions.
-
-***>>>>>COMMENT: Does Task 5.3 relate to to influencing or just automating the process?***
+2. **PopulationSim** inputs, mechanics, and outputs are described for use as a third-party population synthesizer.
 
 
-### A Primer on Population Synthesis
-Population synthesis is essentially the process of expanding a small disaggregated data sample (i.e., one record per household) through replication, to match aggregated total population count. The challenge is that the sample data is almost never a perfect sample. When the sample data is expanded to match one variable, it typically will cause the other variables to become poorly fit. To mitigate this, population synthesis iteratively fits each variable until the total error converges. An additional challenge in population synthesis is in handling multilevel data with both individual persons and households that contain persons. Matching all target total counts with that many degrees of freedom can be difficult and computationally intensive.
+>**PLACEHOLDER TEXT???**
+Note on the usage of appended data: One paramount consideration when adding population variables is whether the variable *influences* travel behavior or is merely impacted by travel behavior. It is important to understand that additional population data are appended to the population for post-processing analysis, and *does not* influence travel behavior. For example, language speaking abilities or persons with disabilities might strongly influence travel behavior. Including these features in the population data would not be valuable as VisionEval does not yet model at this level. A feasible example would be to append the data with race and ethnicity features for a post-processing analysis to measure pollution impacts on race/ethnicity in different regions.
 
 
-## VESimHouseholds Module
-The standard VESimHouseholds module in VisionEval performs population synthesis to generate base data for households. This is done using PUMS data as the seed (i.e., the disaggregated sample data to be expanded) and the user input files for the target totals:
+## A Primer on Population Synthesis
+Population synthesis is essentially the process of expanding a small disaggregated data sample (i.e., one record per household) through replication to match aggregated total population count. The challenge is that the sample data is almost never a perfect sample. When the sample data is expanded to match one variable, it typically will cause the other variables to become poorly fit. To mitigate this, population synthesis iteratively fits each variable until the total error converges. An additional challenge in population synthesis is in handling multilevel data with both individual persons and households that contain persons. Matching all target total counts with that many degrees of freedom can be difficult and computationally intensive.
 
-- **Seed data** (located in the module package, see Build Process[**LINK**] for modifying seed data):
-  - pums_household.csv
-  - pums_persons.csv
-- **Target totals** (located in model directory inputs):
-  - azone_hh_pop_by_age.csv
-  - azone_hhsize_targets.csv
-  - azone_gq_pop_by_age.csv
+## VESimHouseholds Package
+The VESimHouseholds package contains four primary modules:
+1. **CreateHouseholds.R** - Synthesizes the base household population data
+2. **PredictWorkers.R** - Estimates the number of workers in each household
+3. **AssignLifeCycle.R** - Assigns household life cycle variable (LIF_CYC) is defined by 2009 NHTS
+4. **PredictIncome.R** - Estimates the household income for each household
 
-For more details, see the VESimHouseholds module specific documentation: [VESimHouseholds/inst/module_docs/CreateHouseholds.md](https://github.com/VisionEval/VisionEval/blob/master/sources/modules/VESimHouseholds/inst/module_docs/CreateHouseholds.md)
+These individual modules are run sequentially, starting with CreateHouseholds, each adding relevant information to the base household population data. Some modules have pre-requisite dependencies, such as the AssignLifeCycle module requires the number of household workers to be assigned before it can be run in order to determine whether persons are retired. Below is a general summary table of inputs and outputs for each model.
 
-The output of the VESimHouseholds population synthesizer is a table in the datastore with the following attributes:
+| Module           | Input files | Datastore Input Fields | Datastore Output Fields |
+| ---------------- | ----------- | ----- | ------ |
+| CreateHouseholds | VESimHouseholds/inst/extdata/pums\_household.csv<br>VESimHouseholds/inst/extdata/pums\_persons.csv<br>your\_model/inputs/azone\_hh\_pop\_by\_age.csv<br>your\_model/inputs/azone\_hhsize\_targets.csv<br>your\_model/inputs/azone\_gq\_pop\_by\_age.csv | Geo<br>Year<br>Age0to14<br>Age15to19<br>Age20to29<br>Age30to54<br>Age55to64<br>Age65Plus<br>AveHhSize<br>Prop1PerHh<br>GrpAge0to14<br>GrpAge15to19<br>GrpAge20to29<br>GrpAge30to54<br>GrpAge55to64<br>GrpAge65Plus | Azone<br>Marea<br>Age0to14<br>Age15to19<br>Age20to29<br>Age30to54<br>Age55to64<br>Age65Plus<br>HhSize<br>HhType<br>NumHh<br>NumGq<br>HhId |
+| PredictWorkers   | your\_model/inputs/azone\_relative\_employment.csv      | Age0to14<br>Age15to19<br>Age20to29<br>Age30to54<br>Age55to64<br>Age65Plus<br>RelEmp15to19<br>RelEmp20to29<br>RelEmp30to54<br>RelEmp55to64<br>RelEmp65Plus<br>HhType<br>Azone    | Wkr15to19<br>Wkr20to29<br>Wkr30to54<br>Wkr55to64<br>Wkr65Plus<br>Workers<br>NumWkr    |
+| AssignLifeCycle | None | Age0to14<br>Age15to19<br>Age20to29<br>Age30to54<br>Age55to64<br>Age65Plus<br>Wkr15to19<br>Wkr20to29<br>Wkr30to54<br>Wkr55to64<br>Wkr65Plus<br>HhType     | LifeCycle   |
+| PredictIncome    | your\_model/inputs/azone\_per\_cap\_inc.csv  |  Azone<br>HHIncomePC<br>GQIncomePC<br>Azone<br>HhSize<br>HhType<br>Wkr15to19<br>Wkr20to29<br>Wkr30to54<br>Wkr55to64<br>Age65Plus  | Income  |
+
+The following subsections are taken from the module documents and describe how each module functions in more detail individually.
+
+
+### CreateHouseholds Module
+
+This module creates a *Household* table in the datastore and populates the table with datasets characterizing simulated households. Each entry represents a simulated household. Household datasets are created for the numbers of persons in each of 6 age categories (0-14, 15-19, 20-29, 30-54, 55-64, and 65+) and the total number of persons in the household. Two types of households are created:
+- *regular* households (i.e. not persons in group quarters) and
+- *group quarters* households (i.e. persons in group quarters such as college dormatories).
+
+Households are created from Azone level demographic forecasts of the number of persons in each of the 6 age groups for regular and group quarters population. The module tabulates the number of households created in each Azone.
+
+#### Model Parameter Estimation
+
+The based has one parameter object, a probability matrix that a person in each age group is in a household types. This probability matrix is created from Census public use microsample (PUMS) data that is compiled into a R dataframe (Hh_df) when the VESimHouseholds package is built. The data that is supplied with the VESimHouseholds package downloaded from the official VisionEval repository may be used, but it is preferrable to use data for the region being modeled. How this is done is explained in the Build Process documentation **[LINK]**.
+
+Each household is composed of one or more persons, each unique combination of persons defines a household type. Household type is denoted by the number of persons in each age group in the household. For example, a household that has 2 persons of age 0-14 and 2 persons of age 20-29 would be designated as type *2-0-2-0-0-0*. The numbers represent the number of persons in each of the age groups in the order listed above with the hyphens separating the age groups. An example table can be conceptualized as in the example below. The data are at the household level, meaning that there is one record per household, not per person. The person-level attributes (i.e., age group) are effectively stored at the household level as frequencies.
+
+The household probability matrix is created by summing the number of persons each each age group and each of the household types using the household weights in the PUMS data. The probability that a person in each age group would be in each of the household type is the number of persons in the household type divided by the total number of persons in the age group. These household types comprise the rows of the probability matrix. The columns of the matrix correspond to the 6 age groups. Each column of the matrix sums to 1.
+
+No model parameters are used to create *group quarters* households because those households are simply composed of single persons.
+
+
+#### How the Module Works
+
+For *regular* households, the module uses the matrix of probabilities that a person in each age group is present in the most frequently observed household types along with a forecast of number of persons in each age group to synthesize a likely set of regular households. The module starts by assigning the forecast population by age group to household types using the probability matrix that has been estimated. It then carries out the following interative process to create a set of households that is internally consistent and that matches (approximately) the optional inputs for household size and proportion of single-person households:
+
+1. For each household type, the number of households of the type is iteratively fitted to match the target totals for each age group. For example if 420 persons age 0-14 and 480 persons age 20-29 are assigned to household type *2-0-2-0-0-0*, that implies either 210 or 240 households of that type. Where the number of households of the type implied by the persons assigned is not consistent as in this example, the mean of the implied number of households is used. In the example, this would be 225 households. This is the *resolved* number of households. For all household types, the resolved number of households is compared to the maximum number of implied households (in this case 225 is compared to 240) if ratio of these values differs from 1 in absolute terms by less than 0.001 for all household types, the iterative process ends.
+
+2. If a household size target has been specified, the average household size for the resolved households is computed. The ratio of the target household size and the average household size for the resolved households is computed. The number of resolved households in household types having sizes greater than the target household size is multiplied by this ratio. For example, if target household size is 2.5 and average household size for the resolved households is 3, th number of household for household types having more than 2.5 persons (i.e. 3 or more persons) would be multiplied by *2.5 / 3*.
+
+3. If a target for the proportion of households that are 1-person households is set, the difference between the number of 1-person households that there should be and the number that have been assigned is calculated. That difference is added across all 1-person household types (e.g. if the difference is 100, since there are 5 1-person household types, 20 is added to each of those types). The difference is substracted across all other household types.
+
+4. Using the resolved number of households of each type (as adjusted to match household size and 1-person household targets), the number of persons in each age group in each household type is computed. Continuing with the example, 225 households in household type *2-0-2-0-0-0* means that there must be 550 persons of age 0-14 and 550 persons of age 20-29 in that household type. This is called the *resolved* population. An updated probability matrix is computed using the resolved population by housing type.
+
+5. The difference between the total number of persons by age group in the resolved population and the forecast number of persons by age group is calculated and that difference is allocated to household types using the updated probability matrix. Then calculation returns to the first iteration step.
+
+After the iterations have been completed, the numbers of households by type are rounded to create whole number amounts. Then individual household records are created for each. Below is an example of household frequencies matched to the target totals.
+
+| HhType      | Age0to14 | Age15to19 | Age20to29 | Age30to54 | Age55to64 | Age65Plus | Frequency   |
+| ----------- | -------- | --------- | --------- | --------- | --------- | --------- | ----------- |
+| 0-0-0-0-2-0 | 0        | 0         | 0         | 0         | 2         | 0         | 250         |
+| 1-0-1-1-0-0 | 1        | 0         | 1         | 1         | 0         | 0         | 312         |
+| 0-0-0-3-0-0 | 0        | 0         | 0         | 3         | 0         | 0         | 50          |
+| 2-1-0-2-0-0 | 2        | 1         | 0         | 2         | 0         | 0         | 120         |
+| 0-0-0-0-0-2 | 0        | 0         | 0         | 0         | 0         | 2         | 210         |
+| 0-0-0-0-2-0 | 0        | 0         | 0         | 0         | 2         | 0         | 189         |
+| Target Total| 552      | 120       | 312       | 702       | 878       | 420       | 2,984       |
+
+
+
+
+#### User Inputs
+The VESimHouseholds module in VisionEval uses population synthesis to generate base data for households. Two types of data are used, disaggregated sample seed data to be expanded and the target totals
+
+The disaggregated "seed" data are based on PUMS data and are embeded in the VESimHouseholds package in the following files:
+  - `VESimHouseholds/inst/extdata/pums_household.csv`
+  - `VESimHouseholds/inst/extdata/pums_persons.csv`
+
+Modifying the seed data for local data requires downloading new data, replacing the old, and rebuilding the package (see Build Process[**LINK**]). The target totals are stored in three separate files located in the model's input directory.
+
+  - `your_model/inputs/azone_hh_pop_by_age.csv`
+  - `your_model/inputs/azone_hhsize_targets.csv`
+  - `your_model/inputs/azone_gq_pop_by_age.csv`
+
+The population synthesis process will match any target totals that users specify in the model input folder, even if the seed data has not been updated. However, using non-local seed data may cause the synthesis process to take longer to converge and/or have different joint-distributions.
+
+The following table(s) document each input file that must be provided in order for the module to run correctly. User input files are comma-separated valued (csv) formatted text files. Each row in the table(s) describes a field (column) in the input file. The table names and their meanings are as follows:
+
+- **NAME** - The field (column) name in the input file. Note that if the 'TYPE' is 'currency' the field name must be followed by a period and the year that the currency is denominated in. For example if the NAME is 'HHIncomePC' (household per capita income) and the input values are in 2010 dollars, the field name in the file must be 'HHIncomePC.2010'. The framework uses the embedded date information to convert the currency into base year currency amounts. The user may also embed a magnitude indicator if inputs are in thousand, millions, etc. The VisionEval model system design and users guide should be consulted on how to do that.
+- **TYPE** - The data type. The framework uses the type to check units and inputs. The user can generally ignore this, but it is important to know whether the 'TYPE' is 'currency'
+- **UNITS** - The units that input values need to represent. Some data types have defined units that are represented as abbreviations or combinations of abbreviations. For example 'MI/HR' means miles per hour. Many of these abbreviations are self evident, but the VisionEval model system design and users guide should be consulted.
+- **PROHIBIT** - Values that are prohibited. Values may not meet any of the listed conditions.
+- **ISELEMENTOF** - Categorical values that are permitted. Value must be one of the listed values.
+- **DESCRIPTION** - A description of the data.
+
+##### azone_hh_pop_by_age.csv
+|NAME      |TYPE   |UNITS |PROHIBIT |ISELEMENTOF | DESCRIPTION                                                              |
+|:---------|:------|:-----|:--------|:-----------|:-------------------------------------------------------------------------|
+|Geo       |       |      |         |Azones      | Must contain a record for each Azone and model run year.                 |
+|Year      |       |      |         |            | Must contain a record for each Azone and model run year.                 |
+|Age0to14  |people |PRSN  |NA, < 0  |            | Household (non-group quarters) population in 0 to 14 year old age group  |
+|Age15to19 |people |PRSN  |NA, < 0  |            | Household (non-group quarters) population in 15 to 19 year old age group |
+|Age20to29 |people |PRSN  |NA, < 0  |            | Household (non-group quarters) population in 20 to 29 year old age group |
+|Age30to54 |people |PRSN  |NA, < 0  |            | Household (non-group quarters) population in 30 to 54 year old age group |
+|Age55to64 |people |PRSN  |NA, < 0  |            | Household (non-group quarters) population in 55 to 64 year old age group |
+|Age65Plus |people |PRSN  |NA, < 0  |            | Household (non-group quarters) population in 65 or older age group       |
+
+##### azone_hhsize_targets.csv
+|NAME       |TYPE     |UNITS                    |PROHIBIT |ISELEMENTOF | DESCRIPTION                                                          |
+|:----------|:--------|:------------------------|:--------|:-----------|:---------------------------------------------------------------------|
+|Geo        |         |                         |         |Azones      | Must contain a record for each Azone and model run year.             |
+|Year       |         |                         |         |            | Must contain a record for each Azone and model run year.             |
+|AveHhSize  |compound |PRSN/HH                  |< 0      |            | Average household size of households (non-group quarters)            |
+|Prop1PerHh |double   |proportion of households |< 0      |            | Proportion of households (non-group quarters) having only one person |
+
+##### azone_gq_pop_by_age.csv
+|NAME         |TYPE   |UNITS |PROHIBIT |ISELEMENTOF |DESCRIPTION                                              |
+|:------------|:------|:-----|:--------|:-----------|:--------------------------------------------------------|
+|Geo          |       |      |         |Azones      |Must contain a record for each Azone and model run year. |
+|Year         |       |      |         |            |Must contain a record for each Azone and model run year. |
+|GrpAge0to14  |people |PRSN  |NA, < 0  |            |Group quarters population in 0 to 14 year old age group  |
+|GrpAge15to19 |people |PRSN  |NA, < 0  |            |Group quarters population in 15 to 19 year old age group |
+|GrpAge20to29 |people |PRSN  |NA, < 0  |            |Group quarters population in 20 to 29 year old age group |
+|GrpAge30to54 |people |PRSN  |NA, < 0  |            |Group quarters population in 30 to 54 year old age group |
+|GrpAge55to64 |people |PRSN  |NA, < 0  |            |Group quarters population in 55 to 64 year old age group |
+|GrpAge65Plus |people |PRSN  |NA, < 0  |            |Group quarters population in 65 or older age group       |
+
+#### Datasets Used by the Module
+The following table documents each dataset that is *retrieved* from the datastore and used by the module. Each row in the table describes a dataset. All the datasets must be present in the datastore. These data are the resulting datastores created from the user input files. The table names and their meanings are as follows:
+
+- **NAME** - The dataset name.
+- **TABLE** - The table in the datastore that the data is retrieved from.
+- **GROUP** - The group in the datastore where the table is located. Note that the datastore has a group named 'Global' and groups for every model run year. For example, if the model run years are 2010 and 2050, then the datastore will have a group named '2010' and a group named '2050'. If the value for 'GROUP' is 'Year', then the dataset will exist in each model run year group. If the value for 'GROUP' is 'BaseYear' then the dataset will only exist in the base year group (e.g. '2010'). If the value for 'GROUP' is 'Global' then the dataset will only exist in the 'Global' group.
+- **TYPE** - The data type. The framework uses the type to check units and inputs. Refer to the model system design and users guide for information on allowed types.
+- **UNITS** - The units that input values need to represent. Some data types have defined units that are represented as abbreviations or combinations of abbreviations. For example 'MI/HR' means miles per hour. Many of these abbreviations are self evident, but the VisionEval model system design and users guide should be consulted.
+- **PROHIBIT** - Values that are prohibited. Values in the datastore do not meet any of the listed conditions.
+
+|NAME         |TABLE |GROUP |TYPE      |UNITS                    |PROHIBIT |
+|:------------|:-----|:-----|:---------|:------------------------|:--------|
+|Azone        |Azone |Year  |character |ID                       |         |
+|Marea        |Azone |Year  |character |ID                       |         |
+|Age0to14     |Azone |Year  |people    |PRSN                     |NA, < 0  |
+|Age15to19    |Azone |Year  |people    |PRSN                     |NA, < 0  |
+|Age20to29    |Azone |Year  |people    |PRSN                     |NA, < 0  |
+|Age30to54    |Azone |Year  |people    |PRSN                     |NA, < 0  |
+|Age55to64    |Azone |Year  |people    |PRSN                     |NA, < 0  |
+|Age65Plus    |Azone |Year  |people    |PRSN                     |NA, < 0  |
+|AveHhSize    |Azone |Year  |compound  |PRSN/HH                  |< 0      |
+|Prop1PerHh   |Azone |Year  |double    |proportion of households |NA, < 0  |
+|GrpAge0to14  |Azone |Year  |people    |PRSN                     |NA, < 0  |
+|GrpAge15to19 |Azone |Year  |people    |PRSN                     |NA, < 0  |
+|GrpAge20to29 |Azone |Year  |people    |PRSN                     |NA, < 0  |
+|GrpAge30to54 |Azone |Year  |people    |PRSN                     |NA, < 0  |
+|GrpAge55to64 |Azone |Year  |people    |PRSN                     |NA, < 0  |
+|GrpAge65Plus |Azone |Year  |people    |PRSN                     |NA, < 0  |
+
+#### Datasets Produced by the Module
+The following table documents each dataset that is retrieved from the datastore and used by the module. Each row in the table describes a dataset. All the datasets must be present in the datastore. One or more of these datasets may be entered into the datastore from the user input files. The table names and their meanings are as follows:
 
 - **NAME** - The dataset name.
 - **TABLE** - The table in the datastore that the data is retrieved from.
@@ -40,38 +189,344 @@ The output of the VESimHouseholds population synthesizer is a table in the datas
 - **TYPE** - The data type. The framework uses the type to check units and inputs. Refer to the model system design and users guide for information on allowed types.
 - **UNITS** - The units that input values need to represent. Some data types have defined units that are represented as abbreviations or combinations of abbreviations. For example 'MI/HR' means miles per hour. Many of these abbreviations are self evident, but the VisionEval model system design and users guide should be consulted.
 - **PROHIBIT** - Values that are prohibited. Values in the datastore do not meet any of the listed conditions.
-- **ISELEMENTOF** - Categorical values that are permitted. Values in the datastore are one or more of the listed values.
 - **DESCRIPTION** - A description of the data.
 
 |NAME      |TABLE     |GROUP |TYPE       |UNITS    |PROHIBIT |DESCRIPTION                                                                  |
 |:---------|:---------|:-----|:----------|:--------|:--------|:----------------------------------------------------------------------------|
+|NumHh     |Azone     |Year  |households |HH       |NA, < 0  |Number of households (non-group quarters)                                    |
+|NumGq     |Azone     |Year  |people     |PRSN     |NA, < 0  |Number of people in non-institutional group quarters                         |
+|HhId      |Household |Year  |character  |ID       |         |Unique household ID                                                          |
 |Azone     |Household |Year  |character  |ID       |         |Azone ID                                                                     |
 |Marea     |Household |Year  |character  |ID       |         |Marea ID                                                                     |
-|HhId      |Household |Year  |character  |ID       |         |Unique household ID                                                          |
-|HhSize    |Household |Year  |integer    |PRSN     |NA, <= 0 |Number of persons                                                            |
+|HhSize    |Household |Year  |people     |PRSN     |NA, <= 0 |Number of persons                                                            |
+|Age0to14  |Household |Year  |people     |PRSN     |NA, < 0  |Persons in 0 to 14 year old age group                                        |
+|Age15to19 |Household |Year  |people     |PRSN     |NA, < 0  |Persons in 15 to 19 year old age group                                       |
+|Age20to29 |Household |Year  |people     |PRSN     |NA, < 0  |Persons in 20 to 29 year old age group                                       |
+|Age30to54 |Household |Year  |people     |PRSN     |NA, < 0  |Persons in 30 to 54 year old age group                                       |
+|Age55to64 |Household |Year  |people     |PRSN     |NA, < 0  |Persons in 55 to 64 year old age group                                       |
+|Age65Plus |Household |Year  |people     |PRSN     |NA, < 0  |Persons in 65 or older age group                                             |
 |HhType    |Household |Year  |character  |category |         |Coded household age composition (e.g. 2-1-0-2-0-0) or Grp for group quarters |
-|Age0to14  |Household |Year  |integer    |PRSN     |NA, < 0  |Persons in 0 to 14 year old age group                                        |
-|Age15to19 |Household |Year  |integer    |PRSN     |NA, < 0  |Persons in 15 to 19 year old age group                                       |
-|Age20to29 |Household |Year  |integer    |PRSN     |NA, < 0  |Persons in 20 to 29 year old age group                                       |
-|Age30to54 |Household |Year  |integer    |PRSN     |NA, < 0  |Persons in 30 to 54 year old age group                                       |
-|Age55to64 |Household |Year  |integer    |PRSN     |NA, < 0  |Persons in 55 to 64 year old age group                                       |
-|Age65Plus |Household |Year  |integer    |PRSN     |NA, < 0  |Persons in 65 or older age group                                             |
-
-An example table can be conceptualized as in the example below. However, the actual data is stored as a list of vectors (i.e., arrays) in the datastore.
-
-| Azone | Marea | HhId    | HhSize | HhType      | Age0to14 | Age15to19 | Age20to29 | Age30to54 | Age55to64 | Age65Plus |
-| ----- | ----- | ------- | ------ | ----------- | -------- | --------- | --------- | --------- | --------- | --------- |
-| RVMPO | RVMPO | RVMPO-1 | 2      | 0-0-0-0-2-0 | 0        | 0         | 0         | 0         | 2         | 0         |
-| RVMPO | RVMPO | RVMPO-2 | 3      | 1-0-1-1-0-0 | 1        | 0         | 1         | 1         | 0         | 0         |
-| RVMPO | RVMPO | RVMPO-3 | 3      | 0-0-0-3-0-0 | 0        | 0         | 0         | 3         | 0         | 0         |
-| RVMPO | RVMPO | RVMPO-4 | 5      | 2-1-0-2-0-0 | 2        | 1         | 0         | 2         | 0         | 0         |
-| RVMPO | RVMPO | RVMPO-5 | 2      | 0-0-0-0-0-2 | 0        | 0         | 0         | 0         | 0         | 2         |
-| RVMPO | RVMPO | RVMPO-6 | 2      | 0-0-0-0-2-0 | 0        | 0         | 0         | 0         | 2         | 0         |
-
-It should be noted there that the results are at the household level, meaning that there is one record per household, not per person. The person-level attributes (i.e., age group) are effectively stored at the household level as frequencies. This means that any additional data appened at the person-level will need to be stored in a separate table and key-referenced by household ID.
 
 
-## PopulationSim
+### PredictWorkers Module
+
+This module expands upon the CreateHouseholds module results, assigning workers by age to households and to noninstitutional group quarters population. It is a simple model which predicts workers as a function of the age composition of household members. There is no responsiveness to jobs or how changes in the job market and demographics might change the worker age composition, but the user may use optional inputs to exogenously adjust relative employment rates by age group, Azone, and year. These optional input values specify by age group, Azone, and year the proportions of persons in the age group and Azone who are workers relative to the proportions in the model estimation year.
+
+#### Model Parameter Estimation
+This model has just one parameter object, a matrix of the probability that a person in each age group in a specified household type is a worker. It is the same probability matrix used in CreateHouseholds.R created from Census public use microsample (PUMS) data that is compiled by the CreateEstimationDatasets.R script into a R dataset (Hh_df) when the VESimHouseholds package is built.
+
+The data that is supplied with the VESimHouseholds package downloaded from the official VisionEval repository may be used, but it is preferrable to use data for the region being modeled. How this is done is explained in the Build Process documentation **[LINK]**.
+
+
+#### How the Module Works
+The number of workers in each age group of each household is determined through random sampling using the probability for the age group and household type. For example, if a household is of the type *2-0-2-0-0-0*, and the probability that a person of age 20-29 in this household type is a worker is 0.7, then two random samples are taken for this household with a probability of success of 0.7 to determine the number of workers in this age group in the household.
+
+If the user has supplied optional inputs for the ratio of employment for the age group in the forecast year relative to the year of the model estimation dataset, that input is multiplied by the estimated worker probability to determine the sampling probability. For example, if the year of the model estimation data is 2000 and the forecast year is 2010, and if the user specifies that the employment rate of 20-29 year olds in 2010 was 95% of the employment rate of that age group in 2000, then the worker probability in the example above (0.7) is multiplied by 0.95 to calculate the sampling probability.
+
+#### User Inputs
+The following table(s) document each input file that must be provided in order for the module to run correctly. User input files are comma-separated valued (csv) formatted text files. Each row in the table(s) describes a field (column) in the input file. The table names and their meanings are as follows:
+
+- **NAME** - The field (column) name in the input file. Note that if the 'TYPE' is 'currency' the field name must be followed by a period and the year that the currency is denominated in. For example if the NAME is 'HHIncomePC' (household per capita income) and the input values are in 2010 dollars, the field name in the file must be 'HHIncomePC.2010'. The framework uses the embedded date information to convert the currency into base year currency amounts. The user may also embed a magnitude indicator if inputs are in thousand, millions, etc. The VisionEval model system design and users guide should be consulted on how to do that.
+- **TYPE** - The data type. The framework uses the type to check units and inputs. The user can generally ignore this, but it is important to know whether the 'TYPE' is 'currency'
+- **UNITS** - The units that input values need to represent. Some data types have defined units that are represented as abbreviations or combinations of abbreviations. For example 'MI/HR' means miles per hour. Many of these abbreviations are self evident, but the VisionEval model system design and users guide should be consulted.
+- **PROHIBIT** - Values that are prohibited. Values may not meet any of the listed conditions.
+- **ISELEMENTOF** - Categorical values that are permitted. Value must be one of the listed values.
+- **DESCRIPTION** - A description of the data.
+
+##### azone_relative_employment.csv
+This input file is OPTIONAL.
+
+|NAME         |TYPE   |UNITS      |PROHIBIT |ISELEMENTOF |DESCRIPTION                                                                           |
+|:------------|:------|:----------|:--------|:-----------|:-------------------------------------------------------------------------------------|
+|Geo          |       |           |         |Azones      |Must contain a record for each Azone and model run year.                              |
+|Year         |       |           |         |            |Must contain a record for each Azone and model run year.                              |
+|RelEmp15to19 |double |proportion |< 0      |            |Ratio of workers to persons age 15 to 19 in model year vs. in estimation data year    |
+|RelEmp20to29 |double |proportion |< 0      |            |Ratio of workers to persons age 20 to 29 in model year vs. in estimation data year    |
+|RelEmp30to54 |double |proportion |< 0      |            |Ratio of workers to persons age 30 to 54 in model year vs. in estimation data year    |
+|RelEmp55to64 |double |proportion |< 0      |            |Ratio of workers to persons age 55 to 64 in model year vs. in estimation data year    |
+|RelEmp65Plus |double |proportion |< 0      |            |Ratio of workers to persons age 65 or older in model year vs. in estimation data year |
+
+#### Datasets Used by the Module
+The following table documents each dataset that is retrieved from the datastore and used by the module. Each row in the table describes a dataset. All the datasets must be present in the datastore. One or more of these datasets may be entered into the datastore from the user input files. The table names and their meanings are as follows:
+
+- **NAME** - The dataset name.
+- **TABLE** - The table in the datastore that the data is retrieved from.
+- **GROUP** - The group in the datastore where the table is located. Note that the datastore has a group named 'Global' and groups for every model run year. For example, if the model run years are 2010 and 2050, then the datastore will have a group named '2010' and a group named '2050'. If the value for 'GROUP' is 'Year', then the dataset will exist in each model run year group. If the value for 'GROUP' is 'BaseYear' then the dataset will only exist in the base year group (e.g. '2010'). If the value for 'GROUP' is 'Global' then the dataset will only exist in the 'Global' group.
+- **TYPE** - The data type. The framework uses the type to check units and inputs. Refer to the model system design and users guide for information on allowed types.
+- **UNITS** - The units that input values need to represent. Some data types have defined units that are represented as abbreviations or combinations of abbreviations. For example 'MI/HR' means miles per hour. Many of these abbreviations are self evident, but the VisionEval model system design and users guide should be consulted.
+- **PROHIBIT** - Values that are prohibited. Values in the datastore do not meet any of the listed conditions.
+
+|NAME         |TABLE     |GROUP |TYPE      |UNITS      |PROHIBIT |
+|:------------|:---------|:-----|:---------|:----------|:--------|
+|Age0to14     |Household |Year  |people    |PRSN       |NA, < 0  |
+|Age15to19    |Household |Year  |people    |PRSN       |NA, < 0  |
+|Age20to29    |Household |Year  |people    |PRSN       |NA, < 0  |
+|Age30to54    |Household |Year  |people    |PRSN       |NA, < 0  |
+|Age55to64    |Household |Year  |people    |PRSN       |NA, < 0  |
+|Age65Plus    |Household |Year  |people    |PRSN       |NA, < 0  |
+|RelEmp15to19 |Azone     |Year  |double    |proportion |< 0      |
+|RelEmp20to29 |Azone     |Year  |double    |proportion |< 0      |
+|RelEmp30to54 |Azone     |Year  |double    |proportion |< 0      |
+|RelEmp55to64 |Azone     |Year  |double    |proportion |< 0      |
+|RelEmp65Plus |Azone     |Year  |double    |proportion |< 0      |
+|HhType       |Household |Year  |character |category   |         |
+|Azone        |Household |Year  |character |ID         |         |
+|Azone        |Azone     |Year  |character |ID         |         |
+
+#### Datasets Produced by the Module
+The following table documents each dataset that is placed in the datastore by the module. Each row in the table describes a dataset. All the datasets must be present in the datastore. One or more of these datasets may be entered into the datastore from the user input files. The table names and their meanings are as follows:
+
+- **NAME** - The dataset name.
+- **TABLE** - The table in the datastore that the data is placed in.
+- **GROUP** - The group in the datastore where the table is located. Note that the datastore has a group named 'Global' and groups for every model run year. For example, if the model run years are 2010 and 2050, then the datastore will have a group named '2010' and a group named '2050'. If the value for 'GROUP' is 'Year', then the dataset will exist in each model run year. If the value for 'GROUP' is 'BaseYear' then the dataset will only exist in the base year group (e.g. '2010'). If the value for 'GROUP' is 'Global' then the dataset will only exist in the 'Global' group.
+- **TYPE** - The data type. The framework uses the type to check units and inputs. Refer to the model system design and users guide for information on allowed types.
+- **UNITS** - The native units that are created in the datastore. Some data types have defined units that are represented as abbreviations or combinations of abbreviations. For example 'MI/HR' means miles per hour. Many of these abbreviations are self evident, but the VisionEval model system design and users guide should be consulted.
+- **PROHIBIT** - Values that are prohibited. Values in the datastore do not meet any of the listed conditions.
+- **DESCRIPTION** - A description of the data.
+
+|NAME      |TABLE     |GROUP |TYPE   |UNITS |PROHIBIT |DESCRIPTION                            |
+|:---------|:---------|:-----|:------|:-----|:--------|:--------------------------------------|
+|Wkr15to19 |Household |Year  |people |PRSN  |NA, < 0  |Workers in 15 to 19 year old age group |
+|Wkr20to29 |Household |Year  |people |PRSN  |NA, < 0  |Workers in 20 to 29 year old age group |
+|Wkr30to54 |Household |Year  |people |PRSN  |NA, < 0  |Workers in 30 to 54 year old age group |
+|Wkr55to64 |Household |Year  |people |PRSN  |NA, < 0  |Workers in 55 to 64 year old age group |
+|Wkr65Plus |Household |Year  |people |PRSN  |NA, < 0  |Workers in 65 or older age group       |
+|Workers   |Household |Year  |people |PRSN  |NA, < 0  |Total workers                          |
+|NumWkr    |Azone     |Year  |people |PRSN  |NA, < 0  |Number of workers residing in the zone |
+
+---
+### AssignLifeCycle Module
+
+This module assigns a "life cycle" category to each household, which defines each household based on the number of adults, retired or working, and with or without children. The life cycle variable are based on the [LIF_CYC variable in the 2009 NHTS](https://nhts.ornl.gov/tables09/CodebookPage.aspx?id=1239), but aggregates the categories as follows:
+
+| Code | Meaning                         |
+| ---- | ------------------------------- |
+| 1    | one adult, no children          |
+| 2    | 2+ adults, no children          |
+| 3    | one adult, with children (corresponds to NHTS 03, 05, and 07) |
+| 4    | 2+ adults, with children (corresponds to NHTS 04, 06, and 08) |
+| 9    | one adult, retired, no children |
+| 10   | 2+ adults, retired, no children |
+
+
+The life cycle categories are similar, but not the same as, those established for the NHTS. The age categories used in VisionEval models are broader than those used by the NHTS to identify children of different ages. As a result it is not possible for the life cycle designations to reflect child ages as they do in the NHTS. Also, adulthood is determined differently in this module. The NHTS uses age 21 as the threshold age for adulthood. This module uses use 20 as nominal age break for adulthood (the 20-29 age group). Moreover, the module identifies some younger persons to be adults in situations where they are likely to be be living independently as adults or emancipated minors. Persons in the 15 to 19 age group are considered adults when there are no older adults (ages 30+) in the household.
+
+#### Model Parameter Estimation
+
+This module has no parameters. A set of rules assigns age group categories based on the age of persons and workers in the household.
+
+#### How the Module Works
+
+The module uses datasets on the numbers of persons in each household by age category and the numbers of workers by age category. The household life cycle is determined by the number of children in combination with the number of adults and whether the adults are retired.
+
+Because the 15-19 age category can be ambiguous with regard to adult or child status, the status of persons in that age category in the household is determined based on the presence of older adults in the household. If there are no older persons or only persons aged 20-29 in the household, the age 15-19 persons are considered to be adults. Otherwise they are considered to be children.
+
+The retirement status of adults is determined based on age and worker status. Households are considered to be populated with retired persons if all the adults are in the 65+ age category and there are no workers. If children are present in the household with retired persons, then the life cycle category is 03 or 04 rather than 09 or 10.
+
+#### User Inputs
+This module has no user input requirements.
+
+#### Datasets Used by the Module
+The following table documents each dataset that is retrieved from the datastore and used by the module. Each row in the table describes a dataset. All the datasets must be present in the datastore. One or more of these datasets may be entered into the datastore from the user input files. The table names and their meanings are as follows:
+
+- **NAME** - The dataset name.
+- **TABLE** - The table in the datastore that the data is retrieved from.
+- **GROUP** - The group in the datastore where the table is located. Note that the datastore has a group named 'Global' and groups for every model run year. For example, if the model run years are 2010 and 2050, then the datastore will have a group named '2010' and a group named '2050'. If the value for 'GROUP' is 'Year', then the dataset will exist in each model run year group. If the value for 'GROUP' is 'BaseYear' then the dataset will only exist in the base year group (e.g. '2010'). If the value for 'GROUP' is 'Global' then the dataset will only exist in the 'Global' group.
+- **TYPE** - The data type. The framework uses the type to check units and inputs. Refer to the model system design and users guide for information on allowed types.
+- **UNITS** - The units that input values need to represent. Some data types have defined units that are represented as abbreviations or combinations of abbreviations. For example 'MI/HR' means miles per hour. Many of these abbreviations are self evident, but the VisionEval model system design and users guide should be consulted.
+- **PROHIBIT** - Values that are prohibited. Values in the datastore do not meet any of the listed conditions.
+
+|NAME      |TABLE     |GROUP |TYPE      |UNITS    |PROHIBIT |
+|:---------|:---------|:-----|:---------|:--------|:--------|
+|Age0to14  |Household |Year  |people    |PRSN     |NA, < 0  |
+|Age15to19 |Household |Year  |people    |PRSN     |NA, < 0  |
+|Age20to29 |Household |Year  |people    |PRSN     |NA, < 0  |
+|Age30to54 |Household |Year  |people    |PRSN     |NA, < 0  |
+|Age55to64 |Household |Year  |people    |PRSN     |NA, < 0  |
+|Age65Plus |Household |Year  |people    |PRSN     |NA, < 0  |
+|Wkr15to19 |Household |Year  |people    |PRSN     |NA, < 0  |
+|Wkr20to29 |Household |Year  |people    |PRSN     |NA, < 0  |
+|Wkr30to54 |Household |Year  |people    |PRSN     |NA, < 0  |
+|Wkr55to64 |Household |Year  |people    |PRSN     |NA, < 0  |
+|Wkr65Plus |Household |Year  |people    |PRSN     |NA, < 0  |
+|HhType    |Household |Year  |character |category |         |
+
+#### Datasets Produced by the Module
+The following table documents each dataset that is placed in the datastore by the module. Each row in the table describes a dataset. All the datasets must be present in the datastore. One or more of these datasets may be entered into the datastore from the user input files. The table names and their meanings are as follows:
+
+- **NAME** - The dataset name.
+- **TABLE** - The table in the datastore that the data is placed in.
+- **GROUP** - The group in the datastore where the table is located. Note that the datastore has a group named 'Global' and groups for every model run year. For example, if the model run years are 2010 and 2050, then the datastore will have a group named '2010' and a group named '2050'. If the value for 'GROUP' is 'Year', then the dataset will exist in each model run year. If the value for 'GROUP' is 'BaseYear' then the dataset will only exist in the base year group (e.g. '2010'). If the value for 'GROUP' is 'Global' then the dataset will only exist in the 'Global' group.
+- **TYPE** - The data type. The framework uses the type to check units and inputs. Refer to the model system design and users guide for information on allowed types.
+- **UNITS** - The native units that are created in the datastore. Some data types have defined units that are represented as abbreviations or combinations of abbreviations. For example 'MI/HR' means miles per hour. Many of these abbreviations are self evident, but the VisionEval model system design and users guide should be consulted.
+- **ISELEMENTOF** - Categorical values that are permitted. Values in the datastore are one or more of the listed values.
+- **DESCRIPTION** - A description of the data.
+
+|NAME      |TABLE     |GROUP |TYPE      |UNITS    |ISELEMENTOF            |DESCRIPTION                                                   |
+|:---------|:---------|:-----|:---------|:--------|:----------------------|:-------------------------------------------------------------|
+|LifeCycle |Household |Year  |character |category |01, 02, 03, 04, 09, 10 |Household life cycle as defined by 2009 NHTS LIF_CYC variable |
+
+---
+
+### PredictIncome Module
+
+This module predicts the income for each simulated household given the number of workers in each age group and the average per capita income for the Azone where the household resides. Household income models are estimated for *regular* households and for *group quarters* households.
+
+#### Model Parameter Estimation
+The household income models are estimated using Census public use microsample (PUMS) data that are compiled into a R dataset (HhData_df) by the 'CreateEstimationDatasets.R' script when the VESimHouseholds package is built. The data that are supplied with the VESimHouseholds package downloaded from the VisionEval repository may be used, but it is preferrable to use data for the region being modeled. How this is done is explained in the Build Process documentation **[LINK]**.
+
+The household income models are linear regression models in which the dependent variable is a power transformation of income. Power transformation is needed in order to normalize the income data distribution which has a long right-hand tail. The power transform is found which minimizes the skewness of the income distribution. The power transform for *regular* households is: `0.298` and the power transform for *group quarters* households is: `0.275`
+
+The independent variables for the linear models are power transformed per capita income for the area, the number of workers in each of 4 worker age groups (15-19, 20-29, 30-54, 55-64), and the number of persons in the 65+ age group. In addition, power-transformed per capita income is interacted with each of the 4 worker groups and 65+ age group variable. The summary statistics for the *regular* household model are as follows:
+
+```
+
+Call:
+lm(formula = makeFormula(EndTerms_), data = EstData_df)
+
+Residuals:
+    Min      1Q  Median      3Q     Max
+-63.608  -3.244  -0.334   2.767  39.835
+
+Coefficients:
+                       Estimate Std. Error t value Pr(>|t|)
+(Intercept)            -6.37283    0.59487 -10.713  < 2e-16 ***
+PowPerCapInc            1.11470    0.02784  40.043  < 2e-16 ***
+Wkr15to19               3.67743    1.04924   3.505 0.000457 ***
+Wkr20to29               8.21664    0.53182  15.450  < 2e-16 ***
+Wkr30to54               4.87152    0.40188  12.122  < 2e-16 ***
+Wkr55to64               5.84214    0.04052 144.191  < 2e-16 ***
+Age65Plus               6.42608    0.52525  12.234  < 2e-16 ***
+PowPerCapInc:Wkr15to19 -0.15072    0.04921  -3.063 0.002194 **
+PowPerCapInc:Wkr20to29 -0.23896    0.02480  -9.634  < 2e-16 ***
+PowPerCapInc:Wkr30to54  0.04155    0.01877   2.214 0.026837 *
+PowPerCapInc:Age65Plus -0.19331    0.02452  -7.882 3.24e-15 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 5.837 on 122168 degrees of freedom
+Multiple R-squared:  0.3848,	Adjusted R-squared:  0.3847
+F-statistic:  7640 on 10 and 122168 DF,  p-value: < 2.2e-16
+
+```
+
+The summary statistics for the *group quarters* household model are as follows:
+
+```
+
+Call:
+lm(formula = makeFormula(EndTerms_), data = EstData_df)
+
+Residuals:
+     Min       1Q   Median       3Q      Max
+-10.8332  -2.3038  -0.3022   1.6655  22.3561
+
+Coefficients:
+                       Estimate Std. Error t value Pr(>|t|)
+(Intercept)             17.8103     2.0429   8.718  < 2e-16 ***
+PowPerCapInc            -0.7567     0.1203  -6.291 3.37e-10 ***
+Wkr15to19               -8.6140     2.4458  -3.522 0.000431 ***
+Wkr20to29               -8.2516     2.3893  -3.454 0.000557 ***
+Wkr30to54               -9.6213     4.0777  -2.359 0.018331 *
+Wkr55to64              -17.8261     8.7846  -2.029 0.042476 *
+Age65Plus              -20.6001     5.1217  -4.022 5.83e-05 ***
+PowPerCapInc:Wkr15to19   0.7494     0.1441   5.202 2.03e-07 ***
+PowPerCapInc:Wkr20to29   0.8061     0.1408   5.725 1.08e-08 ***
+PowPerCapInc:Wkr30to54   1.0547     0.2401   4.393 1.14e-05 ***
+PowPerCapInc:Wkr55to64   1.6335     0.5109   3.198 0.001393 **
+PowPerCapInc:Age65Plus   1.5285     0.3005   5.086 3.76e-07 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 3.485 on 6343 degrees of freedom
+Multiple R-squared:  0.2964,	Adjusted R-squared:  0.2952
+F-statistic: 242.9 on 11 and 6343 DF,  p-value: < 2.2e-16
+
+```
+
+An additional step must be carried out in order to predict household income. Because the linear model does not account for all of the observed variance, and because income is power distribution, the average of the predicted per capita income is less than the average per capita income of the population. To compensate, random variation needs to be added to each household prediction of power-transformed income by randomly selecting from a normal distribution that is centered on the value predicted by the linear model and has a standard deviation that is calculated so as the resulting average per capita income of households match the input value. A binary search process is used to find the suitable standard deviation.
+
+Following is the comparison of mean values for the observed _regular_ and _group quarter_ household income for the estimation dataset and the corresponding predicted values for the estimation dataset.
+
+
+|              | Regular households| Group quarters |
+|:-------------|------------------:|---------------:|
+|Observed ($)  |   66246           |           6733 |
+|Estimated ($) |   66365           |           6804 |
+
+
+The following figure compares the distributions of the observed and predicted incomes of *regular* and *groups quarters* households:
+
+[<img src="images/reg-hh-inc_obs-vs-est_distributions.png" width="49%"/>](images/reg-hh-inc_obs-vs-est_distributions.png)
+[<img src="images/gq-hh-inc_obs-vs-est_distributions.png" width="49%"/>](images/gq-hh-inc_obs-vs-est_distributions.png)
+
+
+#### How the Module Works
+This module runs at the Azone level. Azone household average per capita income and group quarters average per capita income are user inputs to the model. The other model inputs are in the datastore, having been created by the CreateHouseholds and PredictWorkers modules. Household income is predicted separately for *regular* and *group quarters* households. Per capita income is transformed using the estimated power transform, the model dependent variables are calculated, and the linear model is applied. Random variation is applied so that the per capita mean income for the predicted household income matches the input value.
+
+
+
+#### User Inputs
+The following table(s) document each input file that must be provided in order for the module to run correctly. User input files are comma-separated valued (csv) formatted text files. Each row in the table(s) describes a field (column) in the input file. The table names and their meanings are as follows:
+
+- **NAME** - The field (column) name in the input file. Note that if the 'TYPE' is 'currency' the field name must be followed by a period and the year that the currency is denominated in. For example if the NAME is 'HHIncomePC' (household per capita income) and the input values are in 2010 dollars, the field name in the file must be 'HHIncomePC.2010'. The framework uses the embedded date information to convert the currency into base year currency amounts. The user may also embed a magnitude indicator if inputs are in thousand, millions, etc. The VisionEval model system design and users guide should be consulted on how to do that.
+- **TYPE** - The data type. The framework uses the type to check units and inputs. The user can generally ignore this, but it is important to know whether the 'TYPE' is 'currency'
+- **UNITS** - The units that input values need to represent. Some data types have defined units that are represented as abbreviations or combinations of abbreviations. For example 'MI/HR' means miles per hour. Many of these abbreviations are self evident, but the VisionEval model system design and users guide should be consulted.
+- **PROHIBIT** - Values that are prohibited. Values may not meet any of the listed conditions.
+- **ISELEMENTOF** - Categorical values that are permitted. Value must be one of the listed values.
+- **DESCRIPTION** - A description of the data.
+
+##### azone_per_cap_inc.csv
+|NAME       |TYPE     |UNITS |PROHIBIT |ISELEMENTOF |DESCRIPTION                                                         |
+|:----------|:--------|:-----|:--------|:-----------|:-------------------------------------------------------------------|
+|Geo        |         |      |         |Azones      |Must contain a record for each Azone and model run year.            |
+|Year       |         |      |         |            |Must contain a record for each Azone and model run year.            |
+|HHIncomePC |currency |USD   |NA, < 0  |            |Average annual per capita income of households (non-group quarters) |
+|GQIncomePC |currency |USD   |NA, < 0  |            |Average annual per capita income of group quarters population       |
+
+#### Datasets Used by the Module
+The following table documents each dataset that is retrieved from the datastore and used by the module. Each row in the table describes a dataset. All the datasets must be present in the datastore. One or more of these datasets may be entered into the datastore from the user input files. The table names and their meanings are as follows:
+
+- **NAME** - The dataset name.
+- **TABLE** - The table in the datastore that the data is retrieved from.
+- **GROUP** - The group in the datastore where the table is located. Note that the datastore has a group named 'Global' and groups for every model run year. For example, if the model run years are 2010 and 2050, then the datastore will have a group named '2010' and a group named '2050'. If the value for 'GROUP' is 'Year', then the dataset will exist in each model run year group. If the value for 'GROUP' is 'BaseYear' then the dataset will only exist in the base year group (e.g. '2010'). If the value for 'GROUP' is 'Global' then the dataset will only exist in the 'Global' group.
+- **TYPE** - The data type. The framework uses the type to check units and inputs. Refer to the model system design and users guide for information on allowed types.
+- **UNITS** - The units that input values need to represent. Some data types have defined units that are represented as abbreviations or combinations of abbreviations. For example 'MI/HR' means miles per hour. Many of these abbreviations are self evident, but the VisionEval model system design and users guide should be consulted.
+- **PROHIBIT** - Values that are prohibited. Values in the datastore do not meet any of the listed conditions.
+
+|NAME       |TABLE     |GROUP |TYPE      |UNITS    |PROHIBIT |
+|:----------|:---------|:-----|:---------|:--------|:--------|
+|Azone      |Azone     |Year  |character |ID       |         |
+|HHIncomePC |Azone     |Year  |currency  |USD.1999 |NA, < 0  |
+|GQIncomePC |Azone     |Year  |currency  |USD.1999 |NA, < 0  |
+|Azone      |Household |Year  |character |ID       |         |
+|HhSize     |Household |Year  |people    |PRSN     |NA, <= 0 |
+|HhType     |Household |Year  |character |category |         |
+|Wkr15to19  |Household |Year  |people    |PRSN     |NA, < 0  |
+|Wkr20to29  |Household |Year  |people    |PRSN     |NA, < 0  |
+|Wkr30to54  |Household |Year  |people    |PRSN     |NA, < 0  |
+|Wkr55to64  |Household |Year  |people    |PRSN     |NA, < 0  |
+|Age65Plus  |Household |Year  |people    |PRSN     |NA, < 0  |
+
+#### Datasets Produced by the Module
+The following table documents each dataset that is placed in the datastore by the module. Each row in the table describes a dataset. All the datasets must be present in the datastore. One or more of these datasets may be entered into the datastore from the user input files. The table names and their meanings are as follows:
+
+- **NAME** - The dataset name.
+- **TABLE** - The table in the datastore that the data is placed in.
+- **GROUP** - The group in the datastore where the table is located. Note that the datastore has a group named 'Global' and groups for every model run year. For example, if the model run years are 2010 and 2050, then the datastore will have a group named '2010' and a group named '2050'. If the value for 'GROUP' is 'Year', then the dataset will exist in each model run year. If the value for 'GROUP' is 'BaseYear' then the dataset will only exist in the base year group (e.g. '2010'). If the value for 'GROUP' is 'Global' then the dataset will only exist in the 'Global' group.
+- **TYPE** - The data type. The framework uses the type to check units and inputs. Refer to the model system design and users guide for information on allowed types.
+- **UNITS** - The native units that are created in the datastore. Some data types have defined units that are represented as abbreviations or combinations of abbreviations. For example 'MI/HR' means miles per hour. Many of these abbreviations are self evident, but the VisionEval model system design and users guide should be consulted.
+- **PROHIBIT** - Values that are prohibited. Values in the datastore do not meet any of the listed conditions.
+- **DESCRIPTION** - A description of the data.
+
+|NAME   |TABLE     |GROUP |TYPE     |UNITS    |PROHIBIT |DESCRIPTION                                                |
+|:------|:---------|:-----|:--------|:--------|:--------|:----------------------------------------------------------|
+|Income |Household |Year  |currency |USD.1999 |NA, < 0  |Total annual household (non-qroup & group quarters) income |
+
+
+-----------------------------
+
+### PopulationSim
 There are a variety of third-party population synthesizers available as commercial or open source products. This guide will go through integration with the open source synthesizer PopulationSim (https://activitysim.github.io/populationsim/). Although feasible that other synthesizers can be used, the integration scripts are tailored to the inputs and outputs of PopulationSim.
 
 PopulationSim is fundamentally similar to the population synthesizer in VisionEval's VESimHouseholds package in that it takes a disaggregated sample data seed and iteratively expands and fits it to aggregated target totals. However, unlike VisionEval, PopulationSim will output separate tables for both persons and households.
