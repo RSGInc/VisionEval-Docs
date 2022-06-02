@@ -22,17 +22,16 @@ This guide is divided into two main sections:
 
 
 >**PLACEHOLDER TEXT???**
-Note on the usage of appended data: One paramount consideration when adding population variables is whether the variable *influences* travel behavior or is merely impacted by travel behavior. It is important to understand that additional population data are appended to the population for post-processing analysis, and *does not* influence travel behavior. For example, language speaking abilities or persons with disabilities might strongly influence travel behavior. Including these features in the population data would not be valuable as VisionEval does not yet model at this level. A feasible example would be to append the data with race and ethnicity features for a post-processing analysis to measure pollution impacts on race/ethnicity in different regions.
-
+Note on the usage of appended data: One paramount consideration when adding population variables is whether the variable *influences* travel behavior or is merely impacted by travel behavior. It is important to understand that additional population data are appended to the population for post-processing analysis, and *does not* influence travel behavior until the models in modules after population synthesis are modified to includes those new population characteristics as explanatory variables. For example, language speaking abilities or persons with disabilities might strongly influence travel behavior. However, including these features in the population data would not affect travel as estimated by VisionEval as the other models in VisionEval do not yet include those characteristics as explanatory variables. A post-processing analysis example would be to append the population data with race and ethnicity features and then to measure pollution impacts on race/ethnicity in different regions.
 
 ## A Primer on Population Synthesis
-Population synthesis is essentially the process of expanding a small disaggregated data sample (i.e., one record per household) through replication to match aggregated total population count. The challenge is that the sample data is almost never a perfect sample. When the sample data is expanded to match one variable, it typically will cause the other variables to become poorly fit. To mitigate this, population synthesis iteratively fits each variable until the total error converges. An additional challenge in population synthesis is in handling multilevel data with both individual persons and households that contain persons. Matching all target total counts with that many degrees of freedom can be difficult and computationally intensive.
+Population synthesis is essentially the process of expanding a small disaggregated data sample (i.e., one record per household) through replication to match aggregated total population counts. The challenge is that the sample data is almost never a perfect sample. When the sample data is expanded to match one variable, it typically will cause the other variables to become poorly fit. To mitigate this, population synthesis iteratively fits each variable until the total error is minimized. An additional challenge in population synthesis is in handling multilevel data with both individual persons and households that contain persons. Matching all target total counts with that many degrees of freedom can be difficult and computationally intensive.
 
 ## VESimHouseholds Package
 The VESimHouseholds package contains four primary modules:
 1. **CreateHouseholds.R** - Synthesizes the base household population data
 2. **PredictWorkers.R** - Estimates the number of workers in each household
-3. **AssignLifeCycle.R** - Assigns household life cycle variable (LIF_CYC) is defined by 2009 NHTS
+3. **AssignLifeCycle.R** - Assigns household life cycle variable (LIF_CYC) as defined by 2009 NHTS
 4. **PredictIncome.R** - Estimates the household income for each household
 
 These individual modules are run sequentially, starting with CreateHouseholds, each adding relevant information to the base household population data. Some modules have pre-requisite dependencies, such as the AssignLifeCycle module requires the number of household workers to be assigned before it can be run in order to determine whether persons are retired. Below is a general summary table of inputs and outputs for each model.
@@ -44,12 +43,12 @@ These individual modules are run sequentially, starting with CreateHouseholds, e
 | AssignLifeCycle | None | Age0to14<br>Age15to19<br>Age20to29<br>Age30to54<br>Age55to64<br>Age65Plus<br>Wkr15to19<br>Wkr20to29<br>Wkr30to54<br>Wkr55to64<br>Wkr65Plus<br>HhType     | LifeCycle   |
 | PredictIncome    | your\_model/inputs/azone\_per\_cap\_inc.csv  |  Azone<br>HHIncomePC<br>GQIncomePC<br>Azone<br>HhSize<br>HhType<br>Wkr15to19<br>Wkr20to29<br>Wkr30to54<br>Wkr55to64<br>Age65Plus  | Income  |
 
-The following subsections are taken from the module documents and describe how each module functions in more detail individually.
+The following subsections are taken from the module documentation and describe how each module functions in more detail individually.
 
 
 ### CreateHouseholds Module
 
-This module creates a *Household* table in the datastore and populates the table with datasets characterizing simulated households. Each entry represents a simulated household. Household datasets are created for the numbers of persons in each of 6 age categories (0-14, 15-19, 20-29, 30-54, 55-64, and 65+) and the total number of persons in the household. Two types of households are created:
+This module creates a *Household* table in the datastore and populates the table with datasets characterizing simulated households. Each entry represents a simulated household. Household datasets are created for the numbers of persons in each of 6 age groups (0-14, 15-19, 20-29, 30-54, 55-64, and 65+) and the total number of persons in the household. Two types of households are created:
 - *regular* households (i.e. not persons in group quarters) and
 - *group quarters* households (i.e. persons in group quarters such as college dormatories).
 
@@ -57,7 +56,7 @@ Households are created from Azone level demographic forecasts of the number of p
 
 #### Model Parameter Estimation
 
-The based has one parameter object, a probability matrix that a person in each age group is in a household types. This probability matrix is created from Census public use microsample (PUMS) data that is compiled into a R dataframe (Hh_df) when the VESimHouseholds package is built. The data that is supplied with the VESimHouseholds package downloaded from the official VisionEval repository may be used, but it is preferrable to use data for the region being modeled. How this is done is explained in the Build Process documentation **[LINK]**.
+The base year household model has one parameter object, a probability matrix that a person in each age group is in a household types. This probability matrix is created from Census public use microsample (PUMS) data that is compiled into a R dataframe (Hh_df) when the VESimHouseholds package is built. The data that is supplied with the VESimHouseholds package downloaded from the official VisionEval repository may be used, but it is preferrable to use data for the region being modeled. How this is done is explained in the Build Process documentation **[LINK]**.
 
 Each household is composed of one or more persons, each unique combination of persons defines a household type. Household type is denoted by the number of persons in each age group in the household. For example, a household that has 2 persons of age 0-14 and 2 persons of age 20-29 would be designated as type *2-0-2-0-0-0*. The numbers represent the number of persons in each of the age groups in the order listed above with the hyphens separating the age groups. An example table can be conceptualized as in the example below. The data are at the household level, meaning that there is one record per household, not per person. The person-level attributes (i.e., age group) are effectively stored at the household level as frequencies.
 
@@ -181,7 +180,7 @@ The following table documents each dataset that is *retrieved* from the datastor
 |GrpAge65Plus |Azone |Year  |people    |PRSN                     |NA, < 0  |
 
 #### Datasets Produced by the Module
-The following table documents each dataset that is retrieved from the datastore and used by the module. Each row in the table describes a dataset. All the datasets must be present in the datastore. One or more of these datasets may be entered into the datastore from the user input files. The table names and their meanings are as follows:
+The following table documents each dataset that is produced by the module and stored in the datastore. Each row in the table describes a dataset. All the datasets must be present in the datastore. One or more of these datasets may be entered into the datastore from the user input files. The table names and their meanings are as follows:
 
 - **NAME** - The dataset name.
 - **TABLE** - The table in the datastore that the data is retrieved from.
@@ -213,10 +212,9 @@ The following table documents each dataset that is retrieved from the datastore 
 This module expands upon the CreateHouseholds module results, assigning workers by age to households and to noninstitutional group quarters population. It is a simple model which predicts workers as a function of the age composition of household members. There is no responsiveness to jobs or how changes in the job market and demographics might change the worker age composition, but the user may use optional inputs to exogenously adjust relative employment rates by age group, Azone, and year. These optional input values specify by age group, Azone, and year the proportions of persons in the age group and Azone who are workers relative to the proportions in the model estimation year.
 
 #### Model Parameter Estimation
-This model has just one parameter object, a matrix of the probability that a person in each age group in a specified household type is a worker. It is the same probability matrix used in CreateHouseholds.R created from Census public use microsample (PUMS) data that is compiled by the CreateEstimationDatasets.R script into a R dataset (Hh_df) when the VESimHouseholds package is built.
+This model has just one parameter object, a matrix of the probability that a person in each age group in a specified household type is a worker. It is similar to the probability matrix used in CreateHouseholds.R created from Census public use microsample (PUMS) data that is compiled by the CreateEstimationDatasets.R script into a R dataset (Hh_df) when the VESimHouseholds package is built.
 
 The data that is supplied with the VESimHouseholds package downloaded from the official VisionEval repository may be used, but it is preferrable to use data for the region being modeled. How this is done is explained in the Build Process documentation **[LINK]**.
-
 
 #### How the Module Works
 The number of workers in each age group of each household is determined through random sampling using the probability for the age group and household type. For example, if a household is of the type *2-0-2-0-0-0*, and the probability that a person of age 20-29 in this household type is a worker is 0.7, then two random samples are taken for this household with a probability of success of 0.7 to determine the number of workers in this age group in the household.
@@ -527,7 +525,7 @@ The following table documents each dataset that is placed in the datastore by th
 -----------------------------
 
 ### PopulationSim
-There are a variety of third-party population synthesizers available as commercial or open source products. This guide will go through integration with the open source synthesizer PopulationSim (https://activitysim.github.io/populationsim/). Although feasible that other synthesizers can be used, the integration scripts are tailored to the inputs and outputs of PopulationSim.
+There are a variety of third-party population synthesizers available as commercial or open source products. This guide will go through integration with the open source synthesizer PopulationSim (https://activitysim.github.io/populationsim/). Although itis feasible that other synthesizers can be used, the integration scripts are tailored to the inputs and outputs of PopulationSim.
 
 PopulationSim is fundamentally similar to the population synthesizer in VisionEval's VESimHouseholds package in that it takes a disaggregated sample data seed and iteratively expands and fits it to aggregated target totals. However, unlike VisionEval, PopulationSim will output separate tables for both persons and households.
 
