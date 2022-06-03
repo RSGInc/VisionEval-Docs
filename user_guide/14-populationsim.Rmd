@@ -52,6 +52,7 @@ This module does not model anything per se, but instead reads in the default PUM
 
 #### User Inputs
 This module reads in the two microdata sample files based on PUMS data:
+
 - `VESimHouseholds/inst/extdata/pums_household.csv`
 - `VESimHouseholds/inst/extdata/pums_persons.csv`
 
@@ -83,6 +84,7 @@ The field value data types are as follows:
 ### CreateHouseholds Module
 
 This module creates a *Household* table in the datastore and populates the table with datasets characterizing simulated households. Each entry represents a simulated household. Household datasets are created for the numbers of persons in each of 6 age groups (0-14, 15-19, 20-29, 30-54, 55-64, and 65+) and the total number of persons in the household. Two types of households are created:
+
 - *regular* households (i.e. not persons in group quarters) and
 - *group quarters* households (i.e. persons in group quarters such as college dormatories).
 
