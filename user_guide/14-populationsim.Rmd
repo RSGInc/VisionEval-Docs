@@ -7,15 +7,14 @@ One of the basic components of VisionEval is the household population being mode
 
 This guide is divided into two main sections:
 
-1. **VESimHouseholds** package inputs, mechanics, and outputs are described. Within this section is a description of the individual modules used in the package and their contribution to the final household population data. The specific modules are:
-   - CreateEstimationDatasets
-   - CreateHouseholds
-   - PredictWorkers
-   - AssignLifeCycle
-   - PredictIncome
+1. **VESimHouseholds** package inputs, mechanics, and outputs are described. Within this section is a description of the individual modules used in the package and their contribution to the [final household population data](#VESimHouseholds-output). The specific modules are:
+   - [CreateEstimationDatasets](#CreateEstimationDatasets)
+   - [CreateHouseholds](#CreateHouseholds)
+   - [PredictWorkers](#PredictWorkers)
+   - [AssignLifeCycle](AssignLifeCycle)
+   - [PredictIncome](#PredictIncome)
 
-
-2. **PopulationSim** inputs, mechanics, and outputs are described for use as a third-party population synthesizer.
+2. [**PopulationSim**](#PopulationSim) inputs, mechanics, and outputs are described for use as a third-party population synthesizer.
 
 **Note**: It is important to clarify that population data and household characteristics appended to the population are for post-processing analysis, and do not introduce changes to travel behavior models. Additionally, the conversion tool from external population synthesis <u>to be developed</u> will not forecast shifts in demographic characteristics (aside from age, income, employment status).
 
@@ -46,7 +45,7 @@ With the exception of CreateEstimationDatasets.R, all modules save the resulting
 
 The following subsections are taken from the module documentation and describe how each module functions in more detail individually.
 
-### CreateEstimationDatasets
+### CreateEstimationDatasets Module {#CreateEstimationDatasets}
 This module does not model anything per se, but instead reads in the default PUMS data and converts it to an R dataframe and stores it in the VESimHouseholds package data folder. These data in the Hh_df dataframe become the base seed data from which the household populations are synthesized. To change the source (use local data rather than the default data) of the PUMS seed data, see the [Module Build Process](#ve-buildprocess) for more details.
 
 #### User Inputs
@@ -70,6 +69,7 @@ The CreateEstimationDatasets will store an R dataframe in the package, an exampl
 | 4        | 0         | 0         | 2         | 0         | 0         | 0         | 0         | 2         | 0         | 0         | 26006.66     | SF        | 132400 | 6      | 21       | Reg    |
 
 The field value data types are as follows:
+
 - Age\#to\# - Integer
 - Wkr\#to\# - Integer
 - AvePerCapInc - Integer
@@ -259,7 +259,7 @@ The following table documents each dataset that is produced by the module and st
 |HhType    |Household |Year  |character  |category |         |Coded household age composition (e.g. 2-1-0-2-0-0) or Grp for group quarters |
 
 
-### PredictWorkers Module
+### PredictWorkers Module {#PredictWorkers}
 
 This module expands upon the CreateHouseholds module results, assigning workers by age to households and to noninstitutional group quarters population. It is a simple model which predicts workers as a function of the age composition of household members. There is no responsiveness to jobs or how changes in the job market and demographics might change the worker age composition, but the user may use optional inputs to exogenously adjust relative employment rates by age group, Azone, and year. These optional input (azone_relative_employment.csv) values specify by age group, Azone, and year the proportions of persons in the age group and Azone who are workers relative to the proportions in the model estimation year.
 
@@ -357,7 +357,7 @@ The following table documents each dataset that is placed in the datastore by th
 |NumWkr    |Azone     |Year  |people |PRSN  |NA, < 0  |Number of workers residing in the zone |
 
 
-### AssignLifeCycle Module
+### AssignLifeCycle Module {#AssignLifeCycle}
 
 This module assigns a "life cycle" category to each household, which defines each household based on the number of adults, retired or working, and with or without children. The life cycle variable are based on the [LIF_CYC variable in the 2009 NHTS](https://nhts.ornl.gov/tables09/CodebookPage.aspx?id=1239), but aggregates the categories as follows:
 
@@ -429,7 +429,7 @@ The following table documents each dataset that is placed in the datastore by th
 |LifeCycle |Household |Year  |character |category |01, 02, 03, 04, 09, 10 |Household life cycle as defined by 2009 NHTS LIF_CYC variable |
 
 
-### PredictIncome Module
+### PredictIncome Module {#PredictIncome}
 
 This module predicts the income for each simulated household given the number of workers in each age group and the average per capita income for the Azone where the household resides. Household income models are estimated for *regular* households and for *group quarters* households.
 
@@ -510,10 +510,10 @@ An additional step must be carried out in order to predict household income. Bec
 Following is the comparison of mean values for the observed _regular_ and _group quarter_ household income for the estimation dataset and the corresponding predicted values for the estimation dataset.
 
 
-|              | Regular households| Group quarters |
-|:-------------|------------------:|---------------:|
-|Observed ($)  |   66246           |           6733 |
-|Estimated ($) |   66365           |           6804 |
+|               | Regular households| Group quarters |
+|:--------------|------------------:|---------------:|
+|Observed (\$)  |   66,246          |          6,733 |
+|Estimated (\$) |   66,365          |          6,804 |
 
 
 The following figure compares the distributions of the observed and predicted incomes of *regular* and *groups quarters* households:
@@ -585,7 +585,7 @@ The following table documents each dataset that is placed in the datastore by th
 |Income |Household |Year  |currency |USD.1999 |NA, < 0  |Total annual household (non-qroup & group quarters) income |
 
 
-### Datasets Produced by VESimHouseholds
+### Datasets Produced by VESimHouseholds {#VESimHouseholds-output}
 The following table documents the overall dataset that is placed in the datastore by the VESimHouseholds package. Each row in the table describes a dataset. The table names and their meanings are as follows:
 
 
@@ -614,8 +614,8 @@ The following table documents the overall dataset that is placed in the datastor
 
 If a third-party population synthesizer is used, the results must match the above table, and be converted to the VisionEval format.
 
-### PopulationSim
-There are a variety of third-party population synthesizers available as commercial or open source products. This guide will go through integration with the open source synthesizer PopulationSim (https://activitysim.github.io/populationsim/). PopulationSim is also maintained through a consortium of government agencies. For more information see https://activitysim.github.io/.  
+## PopulationSim {#PopulationSim}
+There are a variety of third-party population synthesizers available as commercial or open source products. This guide will go through integration with the open source synthesizer PopulationSim (https://activitysim.github.io/populationsim/). PopulationSim is also maintained through a consortium of government agencies. For more information see https://activitysim.github.io/.
 
 Although it is feasible that other synthesizers can be used, this documentation and integration scripts will be tailored to the inputs and outputs of PopulationSim (as part of Task 5.2). PopulationSim is fundamentally similar to the population synthesizer in VisionEval's VESimHouseholds package in that it takes a disaggregated sample data seed and iteratively expands and fits it to aggregated target totals. However, unlike VisionEval, PopulationSim will output separate tables for both persons and households.
 
@@ -661,16 +661,3 @@ The geographic crosswalk file is used to convert between different spatial zones
 | 232  | 45          | 100    | 600   | 1       |
 | 247  | 45          | 202    | 600   | 1       |
 | 248  | 45          | 202    | 600   | 1       |
-
-
-## Case Study 1 -- Appending population data using third-party synthesizer PopulationSim  (To be developed further in subsequent tasks)
-We will provide an in-depth documentation and guide for users as part of Task 5.2. Below is a basic outline:
-
-Proposed integration method \& notes:
-
-1. Modify VESimHouseholds source code to detect pre-synthesized population data in the *\inputs* folder (e.g., synthetic_persons.csv and synthetic_households.csv). If detected, VESimHouseholds will not run its own population synthesis and load the data instead.
-2. Write new VESimHouseholds function that:
-   1. loads the pre-synthesized data,
-   2. separates the base and appended attributes, and
-   3. creates the formatted VisionEval datatores.
-3. Specify/Constrain required variables to generate for VE (e.g., age)
