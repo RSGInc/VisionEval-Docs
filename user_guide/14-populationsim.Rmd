@@ -25,6 +25,7 @@ Population synthesis is essentially the process of expanding by replication a sm
 
 ## VESimHouseholds Package
 The VESimHouseholds package contains five primary modules:
+
 1. **CreateEstimationDatasets.R** - Formats Public Use Microdata Sample (PUMS) data from comma separate value (CSV) file into the datastore
 2. **CreateHouseholds.R** - Synthesizes the base household population data by age group
 3. **PredictWorkers.R** - Estimates the number of workers in each household by age group
