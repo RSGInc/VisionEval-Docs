@@ -1,4 +1,4 @@
---- 
+---
 title: "VisionEval User Guide"
 author: "VisionEval Pooled Fund Team"
 date: "`r Sys.Date()`"
@@ -7,7 +7,7 @@ documentclass: book
 bibliography: [book.bib, packages.bib]
 # url: your book url like https://bookdown.org/yihui/bookdown
 cover-image: "images/cover.png"
-description: 
+description:
 biblio-style: apalike
 csl: chicago-fullnote-bibliography.csl
 ---
@@ -27,11 +27,12 @@ This guide contains documentation for users and developers of the VisionEval mod
 | [Developer Documentation](#developer) | Information for developers or researchers interested in making contributions to the VisionEval system |
 | [API Documentation][API Documentation] | Module documentation from the model source code |
 | [Estimation in VisionEval][Estimation in VisionEval] | Overview of model estimation in VisionEval and instructions to customize model applications |
-| [Module Build Process][Module Build Process] | Overview of building a VisionEval package module using custom data |
+| [Module Build Process](#ve-buildprocess) | Overview of building a VisionEval package module using custom data |
+| [Population Synthesis](#ve-popsim) | Customizable household data and third-party population synthesis |
 | [Software Framework][Software Framework] | Technical overview of the VisionEval software framework |
 
 ## About VisionEval {-}
-VisionEval is a collaborative project to build a family of strategic tools for performance-based transportation planning into a single open-source programming framework. Strategic tools are designed to evaluate many alternative futures and policies to help state and metropolitan area governments address pressing issues, despite uncertainty. 
+VisionEval is a collaborative project to build a family of strategic tools for performance-based transportation planning into a single open-source programming framework. Strategic tools are designed to evaluate many alternative futures and policies to help state and metropolitan area governments address pressing issues, despite uncertainty.
 
 ## Why Use VisionEval? {-}
 Strategic planning is becoming increasingly important as a means to help state and metropolitan area governments select policies and actions to address pressing issues that are fraught with uncertainty. More specifically, Federal direction has challenged state, regional, and local transportation agencies with measuring the outcomes of decisions through performance-based planning, including considering how transportation solutions may impact future goals such as sustainability, health, and mobility. Further complicating matters, plans need to be resilient to changing transportation and land use trends and the implications of emerging technologies and constraints. VisionEval is an open source common framework building on the successful GreenSTEP family of strategic planning tools that is intended to address these needs.
@@ -61,4 +62,3 @@ knitr::write_bib(c(
   .packages(), 'bookdown', 'knitr', 'rmarkdown'
 ), 'packages.bib')
 ```
-

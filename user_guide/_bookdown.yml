@@ -21,3 +21,4 @@ rmd_files:
   - 11-developer.Rmd
   - 12-api.Rmd
   - 13-software.Rmd
+  - 14-populationsim.Rmd
