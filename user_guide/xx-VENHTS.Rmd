@@ -249,7 +249,7 @@ One variable is absolutely critical to the current VisionEval model: `HOMETYPE`.
 
 
 ### Module Build status
-Below is a summary of build results if `HOMETYPE` is missing
+Below is a summary of build results if `HOMETYPE` is missing.
 
 | Module                | R script                    | Model                                 | Outcome                                                                                                                                       | Notes                                                           |
 |--------------|--------------|--------------|------------------|--------------|
