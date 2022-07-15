@@ -245,7 +245,11 @@ There are several missing data variables in the 2017 data since the 2001 version
 
 -   `HHNUMBIK`: Number of bicycles in household
 
-One variable is absolutely critical to the current VisionEval model: `HOMETYPE`. This variable used in the downstream models and will cause estimations in downstream models to fail. Below is a summary of build results if `HOMETYPE` is missing or filled with a dummy "Missing" value.
+One variable is absolutely critical to the current VisionEval model: `HOMETYPE`. This variable used in the downstream models and will cause estimations in downstream models to fail.
+
+
+### Module Build status
+Below is a summary of build results if `HOMETYPE` is missing
 
 | Module                | R script                    | Model                                 | Outcome                                                                                                                                       | Notes                                                           |
 |--------------|--------------|--------------|------------------|--------------|
