@@ -22,3 +22,4 @@ rmd_files:
   - 12-api.Rmd
   - 13-software.Rmd
   - 14-populationsim.Rmd
+  - 15-VENHTS.Rmd

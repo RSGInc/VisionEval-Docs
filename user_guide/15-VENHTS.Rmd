@@ -1,0 +1,435 @@
+---
+title: "VE NHTS"
+author: "Nick Fournier"
+date: "`r Sys.Date()`"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+# VENHTS Module Guidance {#ve-nhts}
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, results='hide')
+```
+
+## Introduction
+
+The VENHTS module is a modified version of the original VE2001NHTS module, which provides three critical changes.
+
+1.  Includes a processed 2017 version of NHTS dataset for VisionEval (VE).
+2.  Refactors VisionEval to use the more generic VENHTS module rather than the 2001 specific module.
+3.  Generalizes the data ingestion process to make switching between 2001, 2017, and potential future versions more easily.
+
+This document provides an brief overview of how the module functions and how the 2017 data are made backwards compatible with existing 2001 NHTS data framework in VisionEval.
+
+While this module does not "future proof" any future NHTS data releases, or third-party household travel surveys, the purpose is to provide a transparent documentation of methods for users if they wish to format future NHTS data or inject their own datasets.
+
+## Overview
+
+A key element for users to understand about VisionEval is that modules can have multiple dependencies both upstream, downstream, and in parallel throughout the VisionEval ecosystem. Data in the VENHTS (previously VE2001NHTS) are used in several downstream VE packages. Simply swapping out the data in a module does not only affect that module, but can have cascading impacts if the data are insufficient in subsequent models. Conversely, to have changes be reflected in downstream modules, they must also be re-built using the new upstream data (see build process [LINK]).
+
+Below is a general diagram of how NHTS data feeds through the VE ecosystem.
+
+```{r diagram, results=T, include=T, echo=F}
+DiagrammeR::grViz("digraph {
+  graph [layout = dot, rankdir = TB]
+
+  node                  [shape = rectangle]
+  VENHTS                [label = 'VENHTS', fillcolor='#2171b5', style='filled']
+  VEHouseholdVehicles   [label = 'VEHouseholdVehicles', fillcolor='#6baed6', style='filled']
+  VEPowertrainsAndFuels [label = 'VEPowertrainsAndFuels', fillcolor='#6baed6', style='filled']
+  VELandUse             [label = 'VELandUse', fillcolor='#6baed6', style='filled']
+  VEHouseholdTravel     [label = 'VEHouseholdTravel', fillcolor='#6baed6', style='filled']
+  VELandUse             [label = 'VELandUse']
+  VETravelPerformance   [label = 'VETravelPerformance', fillcolor='#bdd7e7', style='filled']
+  VESimLandUse          [label = 'VESimLandUse', fillcolor='#bdd7e7', style='filled']
+  VESimTransportSupply  [label = 'VESimTransportSupply', fillcolor='#eff3ff', style='filled']
+  Model                 [label = 'Model', fillcolor='#fcae91', style='filled,rounded']
+
+
+  # edge definitions with the node IDs
+  VENHTS -> VEHouseholdTravel
+  VENHTS -> VEHouseholdVehicles
+  VENHTS -> VELandUse
+  VESimHouseholds -> VELandUse
+  VENHTS -> VEPowertrainsAndFuels
+  VEHouseholdTravel -> VEPowertrainsAndFuels
+  VELandUse -> VESimLandUse
+  VESimLandUseData -> VESimLandUse
+  VEHouseholdTravel -> VETravelPerformance
+  VEPowertrainsAndFuels -> VETravelPerformance
+  VESimLandUse -> VESimTransportSupply
+  VETransportSupply -> VESimTransportSupply
+
+  VEHouseholdTravel -> Model
+  VEHouseholdVehicles -> Model
+  VEPowertrainsAndFuels -> Model
+  VESimHouseholds -> Model
+  VESimLandUse -> Model
+  VESimTransportSupply -> Model
+  VETravelPerformance -> Model
+
+  }",
+  height = 400)
+```
+
+While most of the VisionEval ecosystem likely uses NHTS data or a derivative at some stage, there are currently only four primary modules that NHTS data are directly fed into:
+
+-   VEHouseholdTravel
+-   VEHouseholdVehicles
+-   VEPowertrainsAndFuels
+-   VELandUse
+
+This narrows the number of "entry points" that need to be closely monitored to ensure successful building using the new data.
+
+### Module Contents
+
+The VEHNHTS module contains a single R script `MakeNHTSDataset.R`. This R scripts is organized into 5 primary stages:
+
+1.  **Function Definition**
+
+2.  **Fetching of NHTS Data from web**
+
+3.  **Load Metropolitan Road and Transit data**
+
+4.  **Process Datasets**
+
+5.  **Save Datasets**
+
+In general, the script is largely the same as the previous `Make2001NHTSDataset.R`, but has been extended and reorganized to allow users to switch between data inputs using the `NHTSYEAR` parameter.
+
+## Pre-processing of NHTS 2017 for VisionEval
+
+For the most part, most columns remain intact between 2017 and 2001 NHTS. However, there are many derived features (e.g., aggregate number of persons at the household level), relabeled features, removed redundancies, and occasionally remove altogether. The table below provides an overall summary "crosswalk" of NHTS 2001 to 2017 columns. For further data attribute details, see the 2001 and 2017 NHTS codebooks:
+
+-   [2001 NHTS Codebook](https://nhts.ornl.gov/assets/codebook_v1.2.pdf)
+-   [2017 NHTS Codebook](https://nhts.ornl.gov/2001/usersguide/UsersGuide.pdf)
+
+#### 2001 to 2017 Column crosswalk
+
+##### vehicle file {-}
+| NHTS2001 | NHTS2017   | Notes    |
+|----------|------------|----------|
+| HOUSEID  | HOUSEID    |          |
+| VEHID    | VEHID      |          |
+| BESTMILE | BESTMILE   |          |
+| EIADMPG  | FEGEMPG    |          |
+| GSCOST   | GSCOST     |          |
+| VEHTYPE  | VEHTYPE    |          |
+| VEHYEAR  | VEHYEAR    |          |
+| VEHMILES | ANNMILES   |          |
+
+
+#### day/trip file {-}
+| NHTS2001 | NHTS2017   | Notes      |
+|----------|------------|------------|
+| HOUSEID  | HOUSEID    |            |
+| TDCASEID | TDCASEID   |            |
+| VEHID    | VEHID      |            |
+| VEHUSED  | VEHID      |            |
+| TRPHHVEH | TRPHHVEH   |            |
+| PERSONID | PERSONID   |            |
+| NUMONTRP | NUMONTRP   |            |
+| TRPTRANS | TRPTRANS   |            |
+| TRPMILES | TRPMILES   |            |
+| TRVL_MIN | TRVLCMIN   |            |
+| DWELTIME | DWELTIME   |            |
+| PSGR_FLG | PSGR_FLG   |            |
+| WHYFROM  | WHYFROM    |            |
+| WHYTO    | WHYTO      |            |
+| VEHTYPE  | VEHTYPE    |            |
+
+#### Persons file {-}
+| NHTS2001 | NHTS2017   | Notes      |
+|----------|------------|------------|
+| HOUSEID  | HOUSEID    |                                                            |
+| PERSONID | PERSONID   |                                                            |
+| COMMDRVR |            | Missing, assumed "-8=Don't Know"                           |
+| NBIKETRP | NBIKETRP   |                                                            |
+| NWALKTRP | NWALKTRP   |                                                            |
+| USEPUBTR | USEPUBTR   |                                                            |
+| WRKDRIVE |            | Missing, assumed "-8=Don't Know"                           |
+| WRKTRANS | WRKTRANS   |                                                            |
+| WORKER   | WORKER     |                                                            |
+| DTGAS    |            | Derived from PRICE variable in households file             |
+| DISTTOWK | DISTTOWK17 |                                                            |
+| DRIVER   | DRIVER     |                                                            |
+| R_AGE    | R_AGE      |                                                            |
+| R_SEX    | R_SEX      |                                                            |
+
+#### Households file {-}
+| NHTS2001 | NHTS2017   | Notes      |
+|----------|------------|------------|
+| HOUSEID  | HOUSEID    |                                                            |
+| AGE_P1   |            | Derived from persons file                                  |
+| AGE_P2   |            | Derived from persons file                                  |
+| AGE_P3   |            | Derived from persons file                                  |
+| AGE_P4   |            | Derived from persons file                                  |
+| AGE_P5   |            | Derived from persons file                                  |
+| AGE_P6   |            | Derived from persons file                                  |
+| AGE_P7   |            | Derived from persons file                                  |
+| AGE_P8   |            | Derived from persons file                                  |
+| AGE_P9   |            | Derived from persons file                                  |
+| AGE_P10  |            | Derived from persons file                                  |
+| AGE_P11  |            | Derived from persons file                                  |
+| AGE_P12  |            | Derived from persons file                                  |
+| AGE_P13  |            | Derived from persons file                                  |
+| AGE_P14  |            | Derived from persons file                                  |
+| CENSUS_D | CENSUS_D   |                                                            |
+| CENSUS_R | CENSUS_R   |                                                            |
+| DRVRCNT  | DRVRCNT    |                                                            |
+| DRV_P1   |            | Derived from persons file                                  |
+| DRV_P2   |            | Derived from persons file                                  |
+| DRV_P3   |            | Derived from persons file                                  |
+| DRV_P4   |            | Derived from persons file                                  |
+| DRV_P5   |            | Derived from persons file                                  |
+| DRV_P6   |            | Derived from persons file                                  |
+| DRV_P7   |            | Derived from persons file                                  |
+| DRV_P8   |            | Derived from persons file                                  |
+| DRV_P9   |            | Derived from persons file                                  |
+| DRV_P10  |            | Derived from persons file                                  |
+| DRV_P11  |            | Derived from persons file                                  |
+| DRV_P12  |            | Derived from persons file                                  |
+| DRV_P13  |            | Derived from persons file                                  |
+| DRV_P14  |            | Derived from persons file                                  |
+| EXPFLHHN | WTHHFIN    |                                                            |
+| EXPFLLHH | WTHHFIN    |                                                            |
+| FLGFINCM |            | Assumed "1=Yes" all household members incomes are reported |
+| HBHRESDN | HBRESDN    |                                                            |
+| HBHUR    | HBHUR      |                                                            |
+| HBPPOPDN | HBPPOPDN   |                                                            |
+| HHC_MSA  | HH_CBSA    | Derived from msa_xwalk of HH_CBSA                          |
+| HHFAMINC | HHFAMINC   |                                                            |
+| HHINCTTL | HHFAMINC   |                                                            |
+| HHNUMBIK |            | Missing, assumed "-8=Don't Know"                           |
+| HHR_AGE  |            | Derived from persons file                                  |
+| HHR_DRVR |            | Derived from persons file                                  |
+| HHR_RACE | HH_RACE    | Derived from persons file                                  |
+| HHR_SEX  |            | Derived from persons file                                  |
+| HHSIZE   | HHSIZE     |                                                            |
+| HHVEHCNT | HHVEHCNT   |                                                            |
+| HOMETYPE |            | Missing, critical column that must be imputed              |
+| HTEEMPDN | HTEEMPDN   |                                                            |
+| HTHRESDN | HTRESDN    |                                                            |
+| HTHUR    | HBHUR      |                                                            |
+| HTPPOPDN | HTPPOPDN   |                                                            |
+| LIF_CYC  | LIF_CYC    |                                                            |
+| MSAPOP   |            | Imputed as mean value of MSASIZE bins                      |
+| MSACAT   | MSACAT     |                                                            |
+| MSASIZE  | MSASIZE    |                                                            |
+| RAIL     | RAIL       |                                                            |
+| RATIO16V |            | Derived from persons and households table                  |
+| URBAN    | URBAN      |                                                            |
+| URBRUR   | URBRUR     |                                                            |
+| WRKCOUNT | WRKCOUNT   |                                                            |
+| WKR_P1   |            | Derived from persons file                                  |
+| WKR_P2   |            | Derived from persons file                                  |
+| WKR_P3   |            | Derived from persons file                                  |
+| WKR_P4   |            | Derived from persons file                                  |
+| WKR_P5   |            | Derived from persons file                                  |
+| WKR_P6   |            | Derived from persons file                                  |
+| WKR_P7   |            | Derived from persons file                                  |
+| WKR_P8   |            | Derived from persons file                                  |
+| WKR_P9   |            | Derived from persons file                                  |
+| WKR_P10  |            | Derived from persons file                                  |
+| WKR_P11  |            | Derived from persons file                                  |
+| WKR_P12  |            | Derived from persons file                                  |
+| WKR_P13  |            | Derived from persons file                                  |
+| WKR_P14  |            | Derived from persons file                                  |
+| CNTTDHH  | CNTTDHH    |                                                            |
+
+#### CBSA to MSA Crosswalk
+
+VisionEval uses Metropolitan Statistical Areas (MSA) to join road and transit data onto NHTS data. However, the 2017 version of NHTS uses core based statistical areas (CBSA), which include both MSAs and the smaller micropolitan statistical areas. To make the 2017 NHTS data backwards compatible, a CBSA to MSA crosswalk was used to aggregate CBSAs in the 2017 NHTS data to MSAs.
+
+#### Feature Derivations
+
+Derived features require no imputation, but are created by joining and aggregating or calculating the data to create the new column as necessary. For example, the age group columns (e.g., AGE_P1-14, DRV_P1-14, and WKR_P1-14) are created by joining the persons table to the households table on `HOUSEID`, then tabulating the number of persons in each age group in each household.
+
+#### Imputation of Missing `HOMETYPE` column
+
+There are several missing data variables in the 2017 data since the 2001 version:
+
+-   `HOMETYPE`: Housing structure type (e.g., Single Family, Duplex, Multi-Family, etc.)
+
+-   `COMMDRV`: Commercial driver
+
+-   `WRKDRIVE`: Driving required for work
+
+-   `HHNUMBIK`: Number of bicycles in household
+
+One variable is absolutely critical to the current VisionEval model: `HOMETYPE`. This variable used in the downstream models and will cause estimations in downstream models to fail.
+
+### Module Build status
+
+Below is a summary of build results if `HOMETYPE` is missing.
+
+#### VEHouseholdVehicles
+
+| R script                    | Model                        | Outcome                                                                                                                                       | Notes                          |
+|-----------------------------|------------------------------|---------|-------|
+| AdjustVehicleOwnership      | None (adjustment)            | Success                                                                                                                                       |                                |
+| AssignDrivers               | lm in estimateDriverModel    | Warning message: In predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be isleading | Missing Hometype causes error. |
+| AssignVehicleAge            | None (assignment)            | Success with minor modification to "vehyear"                                                                                                  |                                |
+| AssignVehicleFeatures       | None (assignment)            | Success                                                                                                                                       |                                |
+| AssignVehicleFeaturesFuture | None (assignment)            | Success                                                                                                                                       |                                |
+| AssignVehicleOwnership      | clm & glm                    | Success with warning on AutoOwnModels_ls\$Metro\$Zero \<- glm()                                                                                 | Missing Hometype causes error  |
+| AssignVehicleType           | glm estimateVehicleTypeModel | Error (Error in 'binarySearch' function to match target value)                                                                                | Missing Hometype coefficient   |
+| CalculateVehicleOwnCost     | None (calculation)           | Success                                                                                                                                       |                                |
+| CreateVehicleTable          | None (assignment)            | Success                                                                                                                                       |                                |
+| Finalize                    | None (assignment)            | Success                                                                                                                                       |                                |
+
+#### VEHouseholdTravel
+
+| R script                    | Model              | Outcome | Notes |
+|-----------------------------|--------------------|---------|-------|
+| ApplyDvmtReductions         | None (assignment)  | Success |       |
+| CalculateAltModeTrips       | Hurdle             | Success |       |
+| CalculateHouseholdDvmt      | BinarySearch       | Success |       |
+| CalculateInducedDemand      | None (calculation) | Success |       |
+| CalculatePolicyVmt          | None (calculation) | Success |       |
+| CalculateTravelDemand       | None (calculation) | Success |       |
+| CalculateTravelDemandFuture | None (calculation) | Success |       |
+| CalculateVehicleTrips       | None (calculation) | Success |       |
+| DivertSovTravel             | ZeroSov_GLM        | Success |       |
+| Initialize                  | None               | Success |       |
+| LoadDefaultValues           | None               | Success |       |
+
+#### VEPowertrainsAndFuel
+
+| R script                  | Model              | Outcome | Notes |
+|---------------------------|--------------------|---------|-------|
+| Initialize                | None               | Success |       |
+| LoadDefaultValues         | None               | Success |       |
+| CalculateCarbonIntensity  | None (calculation) | Success |       |
+| AssignHhVehiclePowertrain | None (assignment)  | Success |       |
+
+#### VELandUse
+
+| R script                  | Model                                 | Outcome                                                        | Notes                                             |
+|-----------------|-----------------|----------------------|-----------------|
+| AssignCarSvcAvailability  | None (assignment)                     | Success                                                        |                                                   |
+| AssignDemandManagement    | None (assignment)                     | Success                                                        |                                                   |
+| AssignDevTypes            | None (assignment)                     | Success                                                        |                                                   |
+| AssignLocTypes            | None (assignment)                     | Success                                                        |                                                   |
+| AssignParkingRestrictions | None (assignment)                     | Success                                                        |                                                   |
+| Calculate4DMeasures       | None (calculation)                    | Success                                                        |                                                   |
+| CalculateBasePlaceTypes   | None (calculation)                    | Success                                                        |                                                   |
+| CalculateFuturePlaceTypes | None (calculation)                    | Success                                                        |                                                   |
+| CalculateUrbanMixMeasure  | CalculateUrbanMixMeasure binarySearch | Error (Error in 'binarySearch' function to match target value) | Likely due to missing Hometype                    |
+| LocateEmployment          | None (assignment)                     | Success                                                        |                                                   |
+| PredictHousing            | HouseTypeModel glm                    | Success                                                        | but doubt results given missing Hometype variable |
+
+### Summary results
+
+To provide an overview of NHTS 2001 to 2017 results, below are comparative plots for each data column between data sets:
+
+```{r diagnostics_data, eval=T, include=F}
+# Read in the data for both 2001 and 2017. Convert to data.table for performance
+library(data.table)
+library(gridExtra)
+library(ggplot2)
+load('./data/nhts2001.rda')
+load('./data/nhts2017.rda')
+
+for(df in c(c('Hh_df', 'Per_df', 'Veh_df', 'HhTours_df'),
+            paste0(c('Hh_df', 'Per_df', 'Veh_df', 'HhTours_df'),'2001'))) {
+  assign(df, data.table(eval(parse(text=df))))
+}
+rm(df)
+is_integer <- function(x) ifelse(is.numeric(x), 
+                                 all(x %% 1 == 0, na.rm = T) == T,
+                                 F)
+
+compare_plot <- function(params) {
+  fill_colors <- c("2001" = "#8da0cb", "2017" = "#66c2a5")
+
+  for(n in colnames(params)) {
+    assign(n, params[[n]])
+  }
+  var = variable
+  
+  df = eval(parse(text=table))
+  df2001 = eval(parse(text=paste0(table,'2001')))
+  
+  if(plot_type == 'frequency') {
+    agg <- merge(
+      df2001[,.(`2001` = .N), by=var],
+      df[,.(`2017` = .N), by=var],
+      all=T
+    )
+    if(class(agg[[var]]) != 'factor') {
+      agg[[var]] <- as.factor(agg[[var]])
+    }
+    # Fill in NA with obvious missing value
+    if(any(is.na(agg[[var]]))) { 
+      agg[[var]] <- addNA(agg[[var]])
+      levels(agg[[var]]) <- c(levels(agg[[var]]), -999)
+      agg[is.na(get(var))][[var]] <- factor(-999)
+    }
+    
+    agg <- melt(agg, id.vars = var, variable.name = 'NHTS')
+    agg[is.na(value), value := 0]
+    agg[ , N := sum(value), by=NHTS]
+    agg[ , pct := value / N]
+    agg[is.na(var)]
+    
+    plot <- ggplot(agg, aes(x=UQ(as.name(var)), y=pct, fill=NHTS)) + 
+      geom_col(position = 'dodge') +
+      scale_x_discrete(limits=sort(unique(agg[[var]])))
+  } 
+  if(plot_type == 'histogram') {
+    # Setup data
+    dat <- rbind(data.table(NHTS='2001', value=df2001[[var]]),
+                 data.table(NHTS='2017', value=df[[var]]))
+    dat[!is.finite(value), value := 0]
+    
+    if(!is.na(clip)) {
+      dat <- dat[value<clip]
+    }
+    
+    # Bin widths
+    bw <- 2 * IQR(dat[value>0,value], na.rm = T) / (max(dat$value, na.rm=T) - min(dat$value, na.rm=T))^(1/3)
+
+    # Initialize plot
+    plot <- ggplot(dat, aes(x=value, fill=NHTS)) +
+      geom_histogram(position = 'dodge', binwidth = bw,
+                     aes(y=after_stat(
+                       c(count[group==1]/sum(count[group==1]),
+                         count[group==2]/sum(count[group==2])))))
+    }
+  
+  # Update some aesthetics
+  plot <- plot + 
+    xlab(var) +
+    scale_y_continuous("Percent of sample",
+                       labels=scales::percent_format(accuracy=1),
+                       trans = ylog) +
+    theme_classic() + 
+    theme(axis.text.x = element_text(angle = xangle, hjust=-1)) +
+    scale_fill_manual(values = fill_colors)
+  return(plot)
+}
+
+# Setup custom analysis separately
+age_cols <- colnames(Hh_df2001)[grepl('^Age', colnames(Hh_df2001))]
+drv_cols <- colnames(Hh_df2001)[grepl('^Drv', colnames(Hh_df2001))]
+wkr_cols <- colnames(Hh_df2001)[grepl('^Wkr', colnames(Hh_df2001))]
+
+# Manually set plot settings
+compare_vars <- fread('./data/plot_settings.csv')
+```
+
+```{r hh_plots, eval=T, echo=F, out.height="20%", out.width="100%", warning=F}
+# chunker <- function(x, n) split(x, sort(x %% (length(x) %/% n)))
+chunker <- function(x, n) split(x, ceiling(seq_along(x) / n))
+hh_plots <- lapply(split(compare_vars, compare_vars$variable), compare_plot)
+chunks <- chunker(1:length(hh_plots), 6)
+
+for(p in chunks) {
+  do.call("grid.arrange", c(hh_plots[p], ncol=2))
+}
+
+```
