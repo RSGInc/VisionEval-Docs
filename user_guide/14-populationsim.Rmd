@@ -614,10 +614,10 @@ The following table documents the overall dataset that is placed in the datastor
 
 If a third-party population synthesizer is used, the results must match the above table, and be converted to the VisionEval format.
 
-## PopulationSim {#PopulationSim}
-There are a variety of third-party population synthesizers available as commercial or open source products. This guide will go through integration with the open source synthesizer PopulationSim (https://activitysim.github.io/populationsim/). PopulationSim is also maintained through a consortium of government agencies. For more information see https://activitysim.github.io/.
+## Third Party Data - PopulationSim {#PopulationSim}
+There are a variety of third-party population synthesizers available as commercial or open source products. This guide will go through integration with the open source synthesizer PopulationSim (https://activitysim.github.io/populationsim/). PopulationSim is maintained through a consortium of government agencies. For more information see https://activitysim.github.io/.
 
-Although it is feasible that other synthesizers can be used, this documentation and integration scripts will be tailored to the inputs and outputs of PopulationSim (as part of Task 5.2). PopulationSim is fundamentally similar to the population synthesizer in VisionEval's VESimHouseholds package in that it takes a disaggregated sample data seed and iteratively expands and fits it to aggregated target totals. However, unlike VisionEval, PopulationSim will output separate tables for both persons and households.
+Although it is feasible that other synthesizers can be used, this documentation and integration scripts is tailored to the inputs and outputs of PopulationSim. PopulationSim is fundamentally similar to the population synthesizer in VisionEval's VESimHouseholds package in that it takes a disaggregated sample data seed and iteratively expands and fits it to aggregated target totals. However, unlike VisionEval, PopulationSim will output separate tables for both persons and households.
 
 PopulationSim operates within working-directory with the following structure:
 
@@ -643,8 +643,9 @@ The key input and output files are:
 | seed_households.csv                 | Seed sample of households                                            |
 | seed_persons.csv                    | Seed sample of persons                                               |
 
-- */output* Sub-directory Contents (populated at the end of a PopulationSim run):\
-This sub-directory is populated at the end of the PopulationSim run. The output can return a variety of useful outputs, such as summary of fit or weights, see [PopulationSim inputs and outputs](https://activitysim.github.io/populationsim/application_configuration.html#inputs-outputs) for a more detailed list of outputs and configuration. Below are the most critical outputs that can be fed into VESimHouseholds.
+- */output* Sub-directory Contents:
+
+  This sub-directory is populated at the end of the PopulationSim run. The output can return a variety of useful data, such as summary of fit or weights, see [PopulationSim inputs and outputs](https://activitysim.github.io/populationsim/application_configuration.html#inputs-outputs) for a more detailed list of outputs and configuration. Below are the most critical outputs that can be fed into VESimHouseholds.
 
 | File                      | Description                                        |
 |---------------------------|----------------------------------------------------|
@@ -652,7 +653,7 @@ This sub-directory is populated at the end of the PopulationSim run. The output 
 | synthetic_persons.csv     | Fully expanded synthetic population of persons.    |
 
 
-The geographic crosswalk file is used to convert between different spatial zones, such as which Census tracts are associated with each region. This input file is critical to translating the synthesized population to VisionEval's Azone/Bzone system.
+The geographic crosswalk file is used to convert between different spatial zones, such as which Census tracts are associated with each region. This input file is critical to translate the synthesized population to VisionEval's Azone/Bzone system (in a subsequent step).
 
 | TAZ  | BLOCK GROUP | TRACT  | PUMA  | REGION  |
 |------|-------------|--------|-------|---------|
@@ -668,10 +669,12 @@ remaining modules within a VE model run have access to the necessary attributes 
 ## VEPopulationSim {#VEPopulationSim}
 
 The VEPopulationSim package is built to host the module that converts the output from
-PopulationSim synthesizer into VisionEval dataset. It also contains several ancillary
+PopulationSim synthesizer into a VisionEval dataset. It also contains several ancillary
 scripts that can assist a user in preparing inputs to the PopulationSim synthesizer
-and customize the module to read a range of outputs produced by synthesizer based
+and customize the module to read a range of outputs produced by the synthesizer based
 on user specified settings.
+
+Note: it is essential that the user has a complete PopulationSim output dataset ready to inform VE before proceeding.
 
 ### Data preparation for PopulationSim synthesizer
 The package includes the script `inst/automated_dataprep.R` that prepares the inputs to
@@ -764,7 +767,7 @@ into VisionEval households. The module and the package are developed using the g
 The module specification is used to specify the level of geography that the module is run at and different data
 transactions with the datastore that are required to successfully run the model. [Module Specification](https://rsginc.github.io/VisionEval-Docs/developer.html) shows more detail about the structure
 needed to build the specification for a module. The specification definition for ReadPopulationSimOutput is generated
-using the inst/create_specification.R within the VEPopulationSim package. There are two inputs to this script:
+using the `inst/create_specification.R` within the VEPopulationSim package. There are two inputs to this script:
 * **PopulationSim_DataDictionary.csv**:
 
 | NAME         | FILE                     | TABLE     | GROUP  | TYPE      | UNITS    | NAVALUE | PROHIBIT             | ISELEMENTOF                | SIZE | UNLIKELY | TOTAL | DESCRIPTION                                                  |
@@ -964,17 +967,16 @@ ReadPopulationSimOutput <- function(L){
 }
 ```
 
-The last part of converting the PopulationSim output into VisionEval dataset is
-to convert the synthetic household and population files to VisionEval readable
-format. VisionEval requires that any currency in the input file has a year for
-which the denomination is used to be associated with it in the column header.
-Thus any fields in the PopulationSim output that represent currency should
-be renamed with the field name followed by a period and they year of denomination.
+The last part of converting the PopulationSim output into VisionEval dataset is to convert the synthetic household and population files to VisionEval readable format.
+
+For example, VisionEval requires that any currency in the input file has a year for
+which the denomination is used to be associated with it in the column header. Thus, any fields in the PopulationSim output that represent currency should be renamed with the field name followed by a period and they year of denomination.
 
 The development of the ReadPopulationSim module specification, main function,
-and preparation of inputs are done using create_ReadPopulationSimOutput_script.R
+and preparation of inputs are done using create_`ReadPopulationSimOutput_script.R`
 script. It sources multiple scripts and output:
-- ReadPopulationSim.R
+
+- `ReadPopulationSim.R`
 - synthetic_households.csv
 - synthetic_persons.csv
 
@@ -1020,7 +1022,11 @@ VESimHousehold package produces and any additional attributes that need to be re
 
 ## Running the model with VEPopulationSim package
 
-To run the model with VEPopulationSim package it is assumed that the users have generated synthetic households and persons file by running the PopulationSim synthesizer and have all the VEModel spatial inputs (bzone or azone) in a format that is spatially consistent with the geography used with the PopulationSim synthesizer.
+To run the model with VEPopulationSim package it is assumed that the users have generated synthetic households and persons file by running the PopulationSim synthesizer and have all the VEModel spatial inputs (bzone or azone) in a format that is spatially consistent with the geography used with the PopulationSim synthesizer. 
+
+[ this process could use greater development around confirming geographies and what if different, etc. in next task ]
+
+
 
 The steps involved in running the model are:
 * Follow the steps listed in [Updating the VEPopulationSim](### Updating the VEPopulationSim) to update the package.
