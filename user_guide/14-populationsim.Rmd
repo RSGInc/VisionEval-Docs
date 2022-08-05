@@ -665,17 +665,107 @@ The geographic crosswalk file is used to convert between different spatial zones
 The following section describes how these output are transferred to VisionEval datastore so that the 
 remaining modules within a VE model run have access to the necessary attributes of a household/population.
 
+## VEPopulationSim {#VEPopulationSim}
+
+The VEPopulationSim package is built to host the module that converts the output from
+PopulationSim synthesizer into VisionEval dataset. It also contains several ancillary
+scripts that can assist a user in preparing inputs to the PopulationSim synthesizer
+and customize the module to read a range of outputs produced by synthesizer based
+on user specified settings.
+
+### Data preparation for PopulationSim synthesizer
+The package includes the script `inst/automated_dataprep.R` that prepares the inputs to
+PopulationSim synthesizer. The script requires following inputs:
+
+#### Inputs
+1. Settings (`inst/datapep_settings.R`) - The settings are used to specify file names
+that are input to the script.
+
+```R
+params = list(
+  geography = "tl_2020_41_bg.zip",
+  zone_list = "bzone_lat_lon.csv",
+  pumaxwalk = "2010_Census_Tract_to_2010_PUMA.txt",
+  popsim_dir = 'populationsim_example'
+)
+```
+* geography - specifies the name of the file to be used to read in the census
+geography.
+* zone_list - specifies the name of the file that contains lat long information for
+*Bzone* geography from VisionEval model.
+* pumaxwalk - specifies the name of the files that contains the crosswalk between
+PUMAs and census geograpy.
+* popsim_dir - specifies the name of the dir where the inputs to the PopulationSim
+synthesizer should be stored.
+
+2. Files (`inst/dataprep_sources`) - These are all the data files that are input to the
+script:
+
+* tl_2020_41_bg.zip - The zip file that contains the shapefile for census geography.
+* bzone_lat_lon.csv - The file that contains lat long information for Bzones as 
+specified in the VisionEval model. Here's an example of a file that comes with
+the package.
+
+| Geo           | Year | Latitude | Longitude |
+| ------------- | ---- | -------- | --------- |
+| D410290014002 | 2010 | 42.48657 | -122.801  |
+| D410290013012 | 2010 | 42.44259 | -122.846  |
+| D410290014001 | 2010 | 42.4601  | -122.792  |
+| D410290014003 | 2010 | 42.47673 | -122.801  |
+
+* 2010_Census_Tract_to_2010_PUMA.txt - The crosswalk between 2010 PUMAs and 2010
+census tract. Here's an example:
+
+| STATEFP | COUNTYFP | TRACTCE | PUMA5CE |      |
+| ------- | -------- | ------- | ------- | ---- |
+| 100     | 102      | 10      | 2       | 100  |
+| 100     | 102      | 20      | 2       | 100  |
+| 100     | 102      | 30      | 2       | 100  |
+| 100     | 102      | 40      | 2       | 100  |
+| 100     | 102      | 50      | 2       | 100  |
+| 100     | 102      | 60      | 2       | 100  |
+| 100     | 102      | 70      | 2       | 100  |
+| 100     | 102      | 80      | 102     | 100  |
+| 100     | 102      | 80      | 202     | 100  |
+
+* tab20_tract20_tract10_st41.txt - This file contains the crosswalk from 2020
+census tract to 2010 census tract. This file is used to establish
+relationship between 2020 PUMA data with 2010 PUMAs as the crosswalk between
+2020 census tract and 2020 PUMAs is unavailable at the time of development of this
+package. Here's an example of the file
+
+| OID_TRACT_20   | GEOID_TRACT_20 | NAMELSAD_TRACT_20 | AREALAND_TRACT_20 | AREAWATER_TRACT_20 | MTFCC_TRACT_20 | FUNCSTAT_TRACT_20 | OID_TRACT_10   | GEOID_TRACT_10 | NAMELSAD_TRACT_10 | AREALAND_TRACT_10 | AREAWATER_TRACT_10 | MTFCC_TRACT_10 | FUNCSTAT_TRACT_10 | AREALAND_PART | AREAWATER_PART |
+| -------------- | -------------- | ----------------- | ----------------- | ------------------ | -------------- | ----------------- | -------------- | -------------- | ----------------- | ----------------- | ------------------ | -------------- | ----------------- | ------------- | -------------- |
+| 20790206509209 | 41001950100    | Census Tract 9501 | 2875398007        | 14489031           | G5020          | S                 | 20740206509209 | 41001950100    | Census Tract 9501 | 2871062057        | 14489031           | G5020          | S                 | 2871020447    | 14489031       |
+| 20790206509209 | 41001950100    | Census Tract 9501 | 2875398007        | 14489031           | G5020          | S                 | 20740206509145 | 41001950300    | Census Tract 9503 | 1751771865        | 5231275            | G5020          | S                 | 4350589       | 0              |
+| 20790206509209 | 41001950100    | Census Tract 9501 | 2875398007        | 14489031           | G5020          | S                 | 20740465474733 | 41023960100    | Census Tract 9601 | 7090605376        | 1331501            | G5020          | S                 | 23720         | 0              |
+| 20790206509209 | 41001950100    | Census Tract 9501 | 2875398007        | 14489031           | G5020          | S                 | 20740449089305 | 41061970200    | Census Tract 9702 | 1588774899        | 3426431            | G5020          | S                 | 3251          | 0              |
+| 20790206509131 | 41001950200    | Census Tract 9502 | 20004679          | 0                  | G5020          | S                 | 20740206509131 | 41001950200    | Census Tract 9502 | 20004679          | 0                  | G5020          | S                 | 20004679      | 0              |
+| 20790206509145 | 41001950300    | Census Tract 9503 | 1747508929        | 5231275            | G5020          | S                 | 20740206509209 | 41001950100    | Census Tract 9501 | 2871062057        | 14489031           | G5020          | S                 | 1081          | 0              |
+| 20790206509145 | 41001950300    | Census Tract 9503 | 1747508929        | 5231275            | G5020          | S                 | 20740206509145 | 41001950300    | Census Tract 9503 | 1751771865        | 5231275            | G5020          | S                 | 1747418565    | 5231275        |
+
+
+#### Running the script
+The user will need a census key in order to run this script. The user needs to create and system environment variable
+called `CENSUS_API_KEY` that holds that api key. The user can then open the `VisionEval.Rproj` file that comes with the build environment of the VisionEval and execute the script `source("sources/modules/VEPopulationSim/inst/automated_dataprep.R", echo=TRUE)` in the
+console window to run the script. This will produce the default version of inputs to the PopulationSim synthesizer.
+To customize the inputs to the PopulationSim synthesizer the user need to get all the inputs contained in the
+`dataprep_sources` directory and update the settings in `dataprep_settings.R` script. The user also need
+to update the variables that need to be pulled from the census data which can be done by updating the body of the
+`automated_dataprep.R` script.
+
+
 ## ReadPopulationSimOutput {#ReadPopulationSimOutput}
 The ReadPopulationSimOutput module developed within the VEPopulationSim package
 built specifically to convert the synthetic households and population, as produced by [PopulationSim](#PopulationSim) 
 into VisionEval households. The module and the package are developed using the guidlines provided in the [Developer Documentation](https://rsginc.github.io/VisionEval-Docs/developer.html). There are two key components to this module:
 
-- Specification:
+- **Specification**:
 The module specification is used to specify the level of geography that the module is run at and different data
 transactions with the datastore that are required to successfully run the model. [Module Specification](https://rsginc.github.io/VisionEval-Docs/developer.html) shows more detail about the structure
 needed to build the specification for a module. The specification definition for ReadPopulationSimOutput is generated
 using the inst/create_specification.R within the VEPopulationSim package. There are two inputs to this script:
-* PopulationSim_DataDictionary.csv:
+* **PopulationSim_DataDictionary.csv**:
 
 | NAME         | FILE                     | TABLE     | GROUP  | TYPE      | UNITS    | NAVALUE | PROHIBIT             | ISELEMENTOF                | SIZE | UNLIKELY | TOTAL | DESCRIPTION                                                  |
 | ------------ | ------------------------ | --------- | ------ | --------- | -------- | ------- | -------------------- | -------------------------- | ---- | -------- | ----- | ------------------------------------------------------------ |
@@ -698,7 +788,7 @@ using the inst/create_specification.R within the VEPopulationSim package. There 
 | PINCADJ      | synthetic_persons.csv    | Person    | Global | currency  | USD      | NA      | c("")                |                            | 0    |          |       | Personal adjusted income                                     |
 | WORKER       | synthetic_persons.csv    | Person    | Global | integer   | binary   | NA      | c("<0", ">1")        | c(0,1)                     | 0    |          |       | Flag for whether a person is a worker                        |
 
-* VESimHousehold_DataDictionary.csv:
+* **VESimHousehold_DataDictionary.csv**:
 
 | NAME      | TABLE     | GROUP | TYPE       | UNITS    | NAVALUE | PROHIBIT            | ISELEMENTOF | DESCRIPTION                                                  |
 | --------- | --------- | ----- | ---------- | -------- | ------- | ------------------- | ----------- | ------------------------------------------------------------ |
@@ -734,7 +824,7 @@ using the inst/create_specification.R within the VEPopulationSim package. There 
 | Worker    | Person    | Year  | integer    | binary   | -1      | c("NA", "< 0",">1") | c(0,1)      | Flag for person as a worker                                  |
 | Race      | Person    | Year  | integer    | category | -1      | c("NA", "< 0")      | c(1:9)      | Coded race of a person (PUMS 2020 definition)                |
 
-- Main function:
+- **Main function**:
 The core function of the ReadPopulationSimOutput module is defined in ve_read_popsim_output_function.R and 
 it describes the relations between the PopulationSim output and VisionEval dataset.
 
@@ -913,7 +1003,7 @@ syn_hh_file <- "synthetic_households.csv"                       # Name of the sy
 Year <- "2020"                                                  # Year for which the PopulationSim synthesizer is run
 ```
 
-In the same script update the fields that hold the currency data
+In the same script the user should update the fields that hold the currency data.
 ```R
 setnames(syn_hh_dt, "HHINCADJ", paste0("HHINCADJ.", Year))      # Update the label of the fields that hold currency data
 setnames(syn_pop_dt, "PINCADJ", paste0("PINCADJ.", Year))       # Update the label of the fields that hold currency data
