@@ -437,11 +437,12 @@ for(p in chunks) {
 ### Model results
 
 To test the 2017 NHTS, the two versions of the model were run, the original version of the model with 2001 NHTS and the new version with 2017 NHTS. Below are comparative plots showing select 2010 results from the VERSPM model:
-```{r diagnostics_data_results, eval=T, include=F}
+```{r diagnostics_data_results, eval=T, include=F, message=F, warning=F}
 # Read in the results for both 2001 and 2017. Convert to data.table for performance
 library(data.table)
 library(gridExtra)
 library(ggplot2)
+library(scales)
 load('./data/resultsnhts2001.rda')
 load('./data/resultsnhts2017.rda')
 
@@ -507,7 +508,17 @@ compare_plot <- function(params) {
     }
 
     # Initialize plot
-    plot <- ggplot(dat, aes(x=value, fill=NHTS)) +
+    if (!(is.na(bw)) & (bw <= 0)) {
+      plot <- ggplot(dat, aes(x=value, fill=NHTS)) +
+      geom_histogram(position = 'dodge',
+                     aes(y=after_stat(
+                       c(count[group==1]/sum(count[group==1]),
+                         count[group==2]/sum(count[group==2]))))) +
+                       scale_y_continuous("Percent of sample",
+                       labels=scales::percent_format(accuracy=1),
+                       trans = ylog)
+    } else {
+      plot <- ggplot(dat, aes(x=value, fill=NHTS)) +
       geom_histogram(position = 'dodge', binwidth = bw,
                      aes(y=after_stat(
                        c(count[group==1]/sum(count[group==1]),
@@ -515,6 +526,7 @@ compare_plot <- function(params) {
                        scale_y_continuous("Percent of sample",
                        labels=scales::percent_format(accuracy=1),
                        trans = ylog)
+    }
     }
   
   if(plot_type == 'bar') {
@@ -528,8 +540,10 @@ compare_plot <- function(params) {
     }
     
     # Initialize plot
-    plot <- ggplot(dat, aes(x=NHTS, y = value, fill=NHTS)) +
-      geom_bar(stat = "identity")
+    plot <- ggplot(dat, aes(x=NHTS, y = value, lable = value, fill=NHTS)) +
+      geom_col() +
+      geom_text(aes(label = comma(value))) +
+      scale_y_continuous("Value")
     }
   
   # Update some aesthetics
