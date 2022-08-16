@@ -437,7 +437,8 @@ for(p in chunks) {
 ### Model results
 
 To test the 2017 NHTS, the two versions of the model were run, the original version of the model with 2001 NHTS and the new version with 2017 NHTS. Below are comparative plots showing select 2010 results from the VERSPM model:
-```{r diagnostics_data_results, eval=T, include=F, message=F, warning=F}
+```{r diagnostics_data_results, eval=T, include=F, message=F, warning=F, comment=F}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, comment = FALSE) 
 # Read in the results for both 2001 and 2017. Convert to data.table for performance
 library(data.table)
 library(gridExtra)
