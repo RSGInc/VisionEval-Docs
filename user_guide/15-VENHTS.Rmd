@@ -8,13 +8,45 @@ output:
   pdf_document: default
 ---
 
-# VENHTS Module Guidance {#ve-nhts}
+# Using VE with Other Data Sets including more recent National Household Travel Surveys {#ve-nhts}
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, results='hide')
 ```
 
 ## Introduction
+
+VE has been created to be a nationally valid model that can be customized and calibrated to meet the local and regional needs of any model application. Key elements of VE have been designed and estimated using the 2001 National Household Travel Survey. The model specification, the explanatory variables, and model coefficients for several models within VE modules were originally estimated using the 2001 data and are still used in the current version of VE. over 20 years after the 2001 NHTS data were collected. Since then, two further rounds of NHTS data have been collected, in 2009, and 2017, and a new NHTS survey is being implemented in 2022. This document has been created to summarize the efforts to update the core VE platform to use the 2017 NHTS as a proof of concept to understand the feasbility of updating the the survey data used in VE. 
+
+The following topics are discussed below:
+
+- A generalized VENHTS module that allows model users to select a specifc version of the NHTS. This module has been prototyped to incorporate the original processing work on the 2001 NHTS that was previously part of the VE2001NHTS module and adds processing of the 2017 NHTS. This document provides an brief overview of how the module functions.
+
+- A comparison between the 2001 NHTS and 2017 NHTS to explain the differences between the two datasets. The document also discusses how the 2017 data are made backwards compatible with the existing 2001 NHTS data framework in VisionEval.
+
+- An overview of differences in the estimation results between VE model's estimated using the 2001 and 2017 NHTS. This includes some discussion of the difficulties of working withing the existing VE modules to extract and compare model estimation results given the non-standard model objects structures that are saved and used in model application.
+
+- To test the 2017 NHTS, two versions of the model were run: the original version of the model based on the 2001 NHTS and a new version based on the 2017 NHTS. The comparison used the example Rogue Valley VERSPM model incorporated in VE.
+
+This work builds on some past efforts to explore updates to individual VE modules. For examplem, the Multimodal Module was developed by Portland State University using the 2009 NHTS. That update included creating a new travel demand model design as well as updating the estimation dataset from the 2001 NHTS to 2009 and also updating other datasets to describe land use and transportation supply. While that effort was an extensive effort to research, re-specify, and re-estimate a single module, this work is an attempt at a broader re-estimation without any re-specification of models, in order to see whether that type of update is possible. 
+
+Discuss the philosophy of changing NHTS has the potential to change many downstream modules. Difficult to understand its effects…
+The need to investigate the inputs the variables, etc
+ 
+
+The difficulties found that in the 2017 NHTS there were changes in the variables ….
+
+
+Therefore, while it has been demonstrated that it is possible to update the NHTS data to a newer version and then re-estimate and run VE, it is a somewhat difficult process that required some imputation in the data to add a variable that is no longer collected in the NHTS, some debugging to isolate estimation failures and their causes, and some grappling with non-standard model object formats in order to understand the reasonableness of the newly estimated models. 
+
+This generally points to some considerations for users and the future development of the VE framework:
+
+1. It is generally feasible that VE could be updated to new versions of the NHTS (e.g., 2017 or 2022 when it becomes available), although rather than the simple re-estimation without re-specification approach taken here it would be preferable to at least respecify models that incorporate 
+
+
+
+
+## VENHTS Module Documentation
 
 The VENHTS module is a modified version of the original VE2001NHTS module, which provides three critical changes.
 
@@ -26,7 +58,7 @@ This document provides an brief overview of how the module functions and how the
 
 While this module does not "future proof" any future NHTS data releases, or third-party household travel surveys, the purpose is to provide a transparent documentation of methods for users if they wish to format future NHTS data or inject their own datasets.
 
-## Overview
+### Overview
 
 A key element for users to understand about VisionEval is that modules can have multiple dependencies both upstream, downstream, and in parallel throughout the VisionEval ecosystem. Data in the VENHTS (previously VE2001NHTS) are used in several downstream VE packages. Simply swapping out the data in a module does not only affect that module, but can have cascading impacts if the data are insufficient in subsequent models. Conversely, to have changes be reflected in downstream modules, they must also be re-built using the new upstream data (see build process [LINK]).
 
@@ -100,7 +132,7 @@ The VEHNHTS module contains a single R script `MakeNHTSDataset.R`. This R script
 
 In general, the script is largely the same as the previous `Make2001NHTSDataset.R`, but has been extended and reorganized to allow users to switch between data inputs using the `NHTSYEAR` parameter.
 
-## Pre-processing of NHTS 2017 for VisionEval
+### Pre-processing of NHTS 2017 for VisionEval
 
 For the most part, most columns remain intact between 2017 and 2001 NHTS. However, there are many derived features (e.g., aggregate number of persons at the household level), relabeled features, removed redundancies, and occasionally remove altogether. The table below provides an overall summary "crosswalk" of NHTS 2001 to 2017 columns. For further data attribute details, see the 2001 and 2017 NHTS codebooks:
 
@@ -557,3 +589,7 @@ for(p in chunks) {
 }
 
 ```
+
+
+
+
