@@ -24,9 +24,9 @@ The following topics are discussed below:
 
 - A comparison between the 2001 NHTS and 2017 NHTS to explain the differences between the two datasets. The document also discusses how the 2017 data are made backwards compatible with the existing 2001 NHTS data framework in VisionEval.
 
-- An overview of differences in the estimation results between VE model's estimated using the 2001 and 2017 NHTS. This includes some discussion of the difficulties of working within the existing VE modules to extract and compare model estimation results given the non-standard model objects structures that are saved and used in model application.
-
 - To test the 2017 NHTS, two versions of the model were run: the original version of the model based on the 2001 NHTS and a new version based on the 2017 NHTS. The comparison uses the example Rogue Valley VERSPM model incorporated in VE.
+
+- An overview of differences in the estimation results between VE model's estimated using the 2001 and 2017 NHTS. This includes some discussion of the difficulties of working within the existing VE modules to extract and compare model estimation results given the non-standard model objects structures that are saved and used in model application.
 
 This work builds on some past efforts to explore updates to individual VE modules. For example, the Multimodal Module was developed by Portland State University using the 2009 NHTS. That update included creating a new travel demand model design as well as updating the estimation dataset from the 2001 NHTS to 2009 and also updating other datasets to describe land use and transportation supply. While that effort was an extensive effort to research, re-specify, and re-estimate a single module, the work in this task is an attempt at a broader re-estimation without any re-specification of models, in order to see whether this type of update is possible, what level of effort it requires, and the impacts on the results from a VE model application. 
 
@@ -610,6 +610,51 @@ for(p in chunks) {
 }
 
 ```
+
+### Estimation Comparison
+
+```{r read_inputs, include=FALSE}
+
+# Diagnostics list object
+estlist <- readRDS("./data/LIST_PACKAGES_COMPARE_LIST.RDS")
+
+```
+
+A proof of concept script has been developed to import the model objects from two builds of VE, in this case the original 2001 version of the model and the build completed with the  2017 NHTS dataset. This provides a structured list holding the estimated model objects from every module, an indication of whether the model objects changed between the reference and updated model version, and then some example comparisons between model objects.
+
+However, the ability to carry out a comprehensive comparison between models is limited by the removal of many of the estimation outputs from the model objects during their reformatting to smaller objects for application purposes. 
+
+The tables below show some example comparisons between the auto ownership models in the VEHouseholdVehicles package, listing the model objects, a summary of the variables in the models that have changed signficantly, and then a more comprehensive comparison between the two sets of models. In general, it is recommended that model users compare:
+
+1. Overal model fit statistics (such as R squared from a linear regression, Rho squared from a logit model, or other statistics such as AIC)
+2. Coefficient level changes between models such as changes in sign and magnitude
+3. Changes in coefficient statistical significance
+4. Fit between the model's predicted values and the estimation dataset or an independent validation dataset
+5. Changes in overall model sensitivity and the reasonable of model forecasts given changes in inputs.
+
+```{r setup2, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, results = TRUE)
+```
+
+
+```{r est-modules-estimation1, fig.cap="VEHouseholdVehicles-AutoOwnModels_ls.rda-SegmentsModels"}
+
+knitr::kable(estlist$VEHouseholdVehicles$AutoOwnModels_ls.rda$SegmentsModels)
+
+```
+
+```{r est-modules-estimation2, fig.cap="VEHouseholdVehicles-AutoOwnModels_ls.rda-Summary"}
+
+knitr::kable(estlist$VEHouseholdVehicles$AutoOwnModels_ls.rda$Summary)
+
+```
+
+```{r est-modules-estimation3, fig.cap="VEHouseholdVehicles-AutoOwnModels_ls.rda-Comparison"}
+
+knitr::kable(estlist$VEHouseholdVehicles$AutoOwnModels_ls.rda$Comparison)
+
+```
+
 
 
 
