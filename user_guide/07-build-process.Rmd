@@ -17,55 +17,81 @@ The steps involved in the process include:
 - Use the re-built package in your model
 
 
-## Context
+## What is the Build Process?
 The VisionEval "build process" rebuilds VisionEval packages to incorporate modified data in the module's model estimation and data processing steps in order to update data resources such as PUMS (Public Use Microdata Samples from the US Census) and estimated model coefficients. The build process can be conducted through R or RStudio starting with the VisionEval code available from its Github repository.
 
 The reason that a modified module must be rebuilt before it is available for use in VisionEval is that the VisionEval framework relies on importing each module from an R package. The data resources in any R package cannot be updated directly. Instead the R package that contain the modified module must be rebuilt from its source. R packages are a fundamental unit of the R ecosystem and create a structured way to bundle code, data, and documentation together into a single unit for distribution. Packages can be easily installed and shared among R users. VisionEval itself is distributed as a set of R packages, and those packages are what must be rebuilt to incorporate any localized data or other user made modifications.
 
-There are two ways to set up VisionEval to rebuild a package with localized data.
+## Building Package Options
+There are a few ways to do this   two ways to set up VisionEval to rebuild a package with localized data.
 
-  1. The most general approach is to start with the source
-code located in the [VisionEval github repository](https://github.com/VisionEval/VisionEval) and to use the build system included with that code. Using that integrated build process will ensure that all the parts of VisionEval are consistent. This steps for rebuilding packages are documented in the ["build/Building.md"](https://github.com/VisionEval/VisionEval/blob/master/build/Building.md) file in the Github source tree.
-1. Install [[Git for Windows][Git4W]](https://git-scm.com/) or equivalent\
-    (optional: makes it easier to access the repositories)
-2. [Install R](https://www.r-project.org/)\
-   (usually the most recent version works; must be 3.6.0 or later)
-3. [Install RTools 4.0](https://cran.r-project.org/bin/windows/Rtools/rtools40.html)
-4. [Install RStudio](https://www.rstudio.com/)\
-   (a version compatible with RTools40, and with the version of R you're using)
-5. Copy or clone the [VisionEval](https://github.com/VisionEval/VisionEval) (or [VisionEval-dev](https://github.com/VisionEval/VisionEval-dev) repository
-6. Start RStudio and open the VisionEval-dev.Rproj project file\
-   (On most graphic display machines, just double-click it)
-7. Execute the `ve.build()` function:\
-   (A full build from scratch takes from 45 minutes to an hour and a
-   half on a typical Windows machine. A build on other architectures may
-   take longer as many of the dependency packages will have to be built
-   from source code.)
-   ```
-   ve.build()
-   ```
-8. Once the build is done, you can get into the runtime environment in several ways:
-      1. By executing ve.run() from the VisionEval-dev RStudio project.
-      2. By entering your file manager program, navigating to the runtime directory and
-      double-clicking the VisionEval.Rproj RStudio project file down in the
-      runtime directory (as you would for the standard binary release installer).
-      3. Starting the R GUI (or R terminal) for the version of R that you used to build
-      VisionEval, setting the working directory (`setwd`) to the runtime folder you
-      just built, and then `source`-ing `Visioneval.R`
-9. If the build is successful, you can make an installer .zip file by doing this:
-   ```
-   ve.build("installer")
-   ```
 
-  2. Alternatively, you can start with a binary VisionEval installation (unzipping the installer file) and then unzip the VisionEval source code file ("src") to create a "src" directory within your runtime. The steps for rebuilding a package using this method are document in ["build/RStudio.md"](https://github.com/VisionEval/VisionEval/blob/master/build/RStudio.md) in the Github source tree.
-    1. Download the runtime installer (zip file) from [the VisionEval Download Page](https://visioneval.org/category/download.html "VisionEval Download")
-      * Pick the installer for your version of R and your Operating System
-      * Windows and Mac OSX are supported for binary installations
-    2. Install the PackageSources (zip file) for the same release date, also from [the VisionEval Download Page](https://visioneval.org/category/download.html "VisionEval Download")
-      * Just unzip the PackageSources into the exact same folder you put the VisionEval runtime
-      * It will create a new `src` sub-directory next to the other VisionEval folders
-    3. Make sure you have [RTools40][getRTools40]
-      * RStudio itself will help you get it, or you can download and install it manually.
+
+Rebuilding a VisionEval Package Locally using RStudio
+
+**1.**Make sure you have a running VisionEval that you can start with RStudio.
+
+​	• Install R (ideally Version 4.1.3)
+
+​	• Install RStudio and start it directly. Verify that it is using the R 4.1.3 version
+
+​	• Download the [VisionEval for R 4.1.3 Installer.](https://github.com/VisionEval/VisionEval-Dev/releases/download/beta-release-0.9/VE-3.0-Installer-Windows-R4.1.3_2022-05-27.zip) Unzip it into a convenient directory (i.e., “VisionEval directory”)
+
+​	• Check that VisionEval starts by double-clicking VisionEval.Rproj in the VisionEval directory
+
+
+
+**2.**Install the VisionEval package source code
+
+• Download the VisionEval for R 4.1.3 Source Code. **WARNING** This file is huge (over a Gigabyte)
+
+• Unzip it into the VisionEval directory from the last step. You should then have a “src” folder inside the VisionEval directory.
+
+
+
+**3.**Start VisionEval by clicking the VisionEval.Rproj file as you did at the end of Step 1 above (or you may just have left RStudio running).
+
+
+
+**4.**Gather the new PUMS .csv files and replace the .csv files in the VisionEval/src/VESimHouseholds/inst/extdata directory
+
+​	• Follow the steps in the online documentation to [pre-process the PUMS data](https://visioneval.org/docs/ve-buildprocess.html#preprocessing-for-visioneval-input-data)
+
+​	• Those steps may be hard to understand, but you’ll want to end up with two .csv files in the extdata folder:
+
+​		1.  pums_persons.csv
+
+​		2.  pums_households.csv
+
+​	**• Ignore the step about recreating the R datasets in the documentation. Just proceed to the next step here.**
+
+**5**.  Configure the RStudio Build Tools (*see images below)*
+
+​	• pick “Build” from the RStudio top menu then “Configure Build Tools. . . ”
+
+​	• choose “Package” in the “Project Build Tools” dropdown.
+
+​	• Browse to the package directory: VisionEval/src/VESimHouseholds, where “VisionEval” is the full path of your VisionEval directory.
+
+​	• Leave all the other defaults as they are.
+
+**6.**Install the package two times.
+
+​	• From the “Build” menu, choose “Install Package” (that will rebuild the R data files)
+
+​	• Then do it again: “Build” menu, then “Install Package” (that will put the rebuilt files into the R package)
+
+​	• The resulting new version of VESimHouseholds will then be installed with your PUMS data rather than the Oregon defaults and it will be used when you next run VERSPM
+
+
+
+For other build methods that may be more appropriate for more experienced users click here:
+
+
+
+
+
+
 
 ### Generic VisionEval Module
 
@@ -133,32 +159,21 @@ setwd("C:/git_clone_directory/VisionEval-Dev/built/visioneval/4.1.2/src/VESimHou
 
 
 
-### Build using command line
-The fundamental command to build an r package can be run from R console using `system("R CMD INSTALL package_path -l lib_path")`. The GUI method essentially constructs this command and executes it.
 
-- `package_path` is the path to the package you are building. If your working directory is already located in the package, you can use `.` to denote the local directory.
-- `lib_path`
-
-```
-system("R CMD INSTALL . -l C:\your_git_clone_folder\VisionEval-Dev\built\visioneval\4.1.2\ve-lib")
-
-```
-
-### Build using devtools
-Alternatively, the [devtools](https://www.r-project.org/nosvn/pandoc/devtools.html) provides a useful suite of tools for package building.
-
-```
-# This runs the scripts and creates documentation, if included
-devtools::document()
-
-# This builds the VESimHouseholds data and scripts into an R package
-devtools::build()
-
-# This then installs the VESimHouseholds package into VisionEval library
-devtools::install()
-```
 
 ## Case Study 1 - PUMS data in VESimHouseholds
+
+### Introduction to PUMS for VE
+- which year of pums, 
+   where to get it it, 
+- how to use it,  
+- what geography, etc. 
+- do we look at the data at all beforehand
+
+
+
+
+
 
 ### Using Local PUMS data in VESimHouseholds
 The VESimHouseholds package contains a number of modules that work within the VisionEval framework to simulate households and their characteristics. The critical purpose of this package is that the data contained within the package are available throughout the VisionEval framework simply by referencing the [VESimHouseholds](https://github.com/VisionEval/VisionEval/tree/master/sources/modules/VESimHouseholds) package. The source code for this package is located on the VisionEval github repository [sources/modules/VESimHouseholds](https://github.com/VisionEval/VisionEval/tree/master/sources/modules/VESimHouseholds).
@@ -252,17 +267,20 @@ And an example of the persons data might look like this:
 |      157|  39|      1|        4|   2100|
 |      159|  80|      2|        2|  14700|
 
-
 Note that the two data files are also linked by a primary key field `SERIALNO`. For each unique household, there are one or more persons linked to that household by the `SERIALNO` key.
+
+
 
 
 ### Step 1 - Preprocessing
 
 To start, we must download our new "raw" PUMS data and format it to match the current VisionEval input files. Processing and formatting can be done manually using spreadsheets and text editors, but some PUMS data are stored in a space saving format that most spreadsheets and humans cannot easily read.
 
-To help with this process, an R script was written with functions that both download the PUMS data and preprocess the data into .CSV files for VisionEval, located here: https://github.com/RSGInc/VEProcessPUMS
+To help with this process, an R script was written with functions that both download the PUMS data and preprocess the data into .CSV files for VisionEval, located here: (script will be pushed to the FHWA repo) https://github.com/RSGInc/VEProcessPUMS
 
 **NOTE:** It is important to note here that VisionEval household and person fields are based on the 2000 <em>Decennial Census</em> PUMS.
+
+### [ nick - move the decennial census pums to the later part of the docu]
 
 For year 2000 and earlier, PUMS data were based on the Decennial Census counted every ten years. <u>Post-2000 PUMS</u> are based on the American Community Survey (ACS), which is a sampling-based survey method collected continuously rather than from a full Decennial Census. Statistically, the ACS-based PUMS are reliable, but the fields <u>differ</u> and will need to be migrated to match the inputs used by VisionEval. More [PUMA history](https://www2.census.gov/geo/pdfs/reference/puma/puma_history.pdf) can be read online at the US Census website.
 
@@ -615,3 +633,105 @@ rm(Inp_ls, HhPowertrain_df)
 The previous step generated the R data files, and you will need to re-build and re-install the VEPowertrainsAndFuels package for VisionEval to use this new input data. Any of the three build processes described above can be used.
 
 Once the package re-build is complete, your new powertrain data will be ready to use in a VisionEval model run.
+
+
+
+
+
+
+
+
+
+## For Developers and Advanced Users
+
+
+
+#### **Most Generic Build Process**
+
+  1. (this is the most sophisticated - big way)
+     The most general approach is to start with the source
+     code located in the [VisionEval github repository](https://github.com/VisionEval/VisionEval) and to use the build system included with that code. Using that integrated build process will ensure that all the parts of VisionEval are consistent. This steps for rebuilding packages are documented in the ["build/Building.md"](https://github.com/VisionEval/VisionEval/blob/master/build/Building.md) file in the Github source tree.
+
+2. Install [[Git for Windows][Git4W]](https://git-scm.com/) or equivalent\
+   (optional: makes it easier to access the repositories)
+
+3. [Install R](https://www.r-project.org/)\
+   (usually the most recent version works; must be 3.6.0 or later)
+
+4. [Install RTools 4.0](https://cran.r-project.org/bin/windows/Rtools/rtools40.html)
+
+5. [Install RStudio](https://www.rstudio.com/)\
+   (a version compatible with RTools40, and with the version of R you're using)
+
+6. Copy or clone the [VisionEval](https://github.com/VisionEval/VisionEval) (or [VisionEval-dev](https://github.com/VisionEval/VisionEval-dev) repository
+
+7. Start RStudio and open the VisionEval-dev.Rproj project file\
+   (On most graphic display machines, just double-click it)
+
+8. Execute the `ve.build()` function:\
+   (A full build from scratch takes from 45 minutes to an hour and a
+   half on a typical Windows machine. A build on other architectures may
+   take longer as many of the dependency packages will have to be built
+   from source code.)
+
+   ```
+   ve.build()
+   ```
+
+9. Once the build is done, you can get into the runtime environment in several ways:
+
+   1. By executing ve.run() from the VisionEval-dev RStudio project.
+   2. By entering your file manager program, navigating to the runtime directory and
+      double-clicking the VisionEval.Rproj RStudio project file down in the
+      runtime directory (as you would for the standard binary release installer).
+   3. Starting the R GUI (or R terminal) for the version of R that you used to build
+      VisionEval, setting the working directory (`setwd`) to the runtime folder you
+      just built, and then `source`-ing `Visioneval.R`
+
+10. If the build is successful, you can make an installer .zip file by doing this:
+
+    ```
+    ve.build("installer")
+    ```
+
+  11. (package by package way that can be enhanced)
+        Alternatively, you can start with a binary VisionEval installation (unzipping the installer file) and then unzip the VisionEval source code file ("src") to create a "src" directory within your runtime. The steps for rebuilding a package using this method are document in ["build/RStudio.md"](https://github.com/VisionEval/VisionEval/blob/master/build/RStudio.md) in the Github source tree.
+          1. Download the runtime installer (zip file) from [the VisionEval Download Page](https://visioneval.org/category/download.html "VisionEval Download")
+
+      * Pick the installer for your version of R and your Operating System
+      * Windows and Mac OSX are supported for binary installations
+         2. Install the PackageSources (zip file) for the same release date, also from [the VisionEval Download Page](https://visioneval.org/category/download.html "VisionEval Download")
+      * Just unzip the PackageSources into the exact same folder you put the VisionEval runtime
+      * It will create a new `src` sub-directory next to the other VisionEval folders
+         3. Make sure you have [RTools40][getRTools40]
+      * RStudio itself will help you get it, or you can download and install it manually.
+
+
+
+### Build using command line
+
+The fundamental command to build an r package can be run from R console using `system("R CMD INSTALL package_path -l lib_path")`. The GUI method essentially constructs this command and executes it.
+
+- `package_path` is the path to the package you are building. If your working directory is already located in the package, you can use `.` to denote the local directory.
+- `lib_path`
+
+```
+system("R CMD INSTALL . -l C:\your_git_clone_folder\VisionEval-Dev\built\visioneval\4.1.2\ve-lib")
+
+```
+
+### Build using devtools
+
+Alternatively, the [devtools](https://www.r-project.org/nosvn/pandoc/devtools.html) provides a useful suite of tools for package building.
+
+```
+# This runs the scripts and creates documentation, if included
+devtools::document()
+
+# This builds the VESimHouseholds data and scripts into an R package
+devtools::build()
+
+# This then installs the VESimHouseholds package into VisionEval library
+devtools::install()
+```
+
