@@ -180,4 +180,4 @@ Click the "Build" drop-down from the main banner menu again. This time there wil
 
 After one successful build, it is strongly recommended that you run build again. This is to ensure that the the new source data files have been generated and propagated through to the VisionEval environment as a package.
 
-This this point the new data should now be imported and usable through the VESimHouseholds package. This can be tested by inspecting the data against the old using `VESimHouseholds::Hh_df`.
+At this point the new data should now be imported and usable through the VESimHouseholds package. This can be tested by inspecting the data against the old using `VESimHouseholds::Hh_df`.

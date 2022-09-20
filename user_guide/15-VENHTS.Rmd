@@ -8,13 +8,51 @@ output:
   pdf_document: default
 ---
 
-# VENHTS Module Guidance {#ve-nhts}
+# Using VE with Other Data Sets including more recent National Household Travel Surveys {#ve-nhts}
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, results='hide')
 ```
 
 ## Introduction
+
+VE has been created to be a nationally valid model that can be customized and calibrated to meet the local and regional needs of any model application. Key elements of VE have been designed and estimated using the 2001 National Household Travel Survey. The model specification, the explanatory variables, and model coefficients for several models within VE modules were originally estimated using the 2001 data and are still used in the current version of VE. over 20 years after the 2001 NHTS data were collected. Since then, two further rounds of NHTS data have been collected, in 2009, and 2017, and a new NHTS survey is being implemented in 2022. This document has been created to summarize the efforts to update the core VE platform to use the 2017 NHTS as a proof of concept to understand the feasbility of updating the survey data used in VE to either later versions of the NHTS or an alternative data source such as a regional household travel survey.
+
+The following topics are discussed below:
+
+- A generalized VENHTS module that allows model users to select a specifc version of the NHTS. This module has been prototyped in this task and incorporates the original processing work on the 2001 NHTS that was previously part of the VE2001NHTS module and adds processing of the 2017 NHTS. This document provides an brief overview of how the module functions.
+
+- A comparison between the 2001 NHTS and 2017 NHTS to explain the differences between the two datasets. The document also discusses how the 2017 data are made backwards compatible with the existing 2001 NHTS data framework in VisionEval.
+
+- To test the 2017 NHTS, two versions of the model were run: the original version of the model based on the 2001 NHTS and a new version based on the 2017 NHTS. The comparison uses the example Rogue Valley VERSPM model incorporated in VE.
+
+- An overview of differences in the estimation results between VE model's estimated using the 2001 and 2017 NHTS. This includes some discussion of the difficulties of working within the existing VE modules to extract and compare model estimation results given the non-standard model objects structures that are saved and used in model application.
+
+This work builds on some past efforts to explore updates to individual VE modules. For example, the Multimodal Module was developed by Portland State University using the 2009 NHTS. That update included creating a new travel demand model design as well as updating the estimation dataset from the 2001 NHTS to 2009 and also updating other datasets to describe land use and transportation supply. While that effort was an extensive effort to research, re-specify, and re-estimate a single module, the work in this task is an attempt at a broader re-estimation without any re-specification of models, in order to see whether this type of update is possible, what level of effort it requires, and the impacts on the results from a VE model application. 
+
+The NHTS is the major estimation dataset used in the models that comprise VE. Therefore, updating the version of the NHTS or considering replacing the NHTS with an alternative household travel survey dataset is an extremely significant change to the model framework with the potential to change the results from many of the modules in the VE system. Given the number of models estimated using the NHTS, it is difficult to predict the effects of updating the dataset. …
+
+The discussion in this document highlights difficulties found in replacing the 2001 NHTS data with an ostensibly very similar dataset, the 2017 NHTS. Once straightforward changes between the two datasets had been dealt with, including some renaming and recoding of variables, there were more important changes to the NHTS that caused estimation problems. This included the lack of a home type variable, that describes the type of structure (e.g., single family home) that the household lives in and that had been used as an explanatory variable in models in the framework. While this was dealt with in this effort by imputing values for home type based on the relationship between home type and other household variables observed in the survey. a more supportable approach would be to re=specify the models that used that variable. If a user were to attempt to replace the NHTS data with other locally collected household travel survey data, it is likely that the number of missing variables would be higher than one and that additional models would requuire respecification, 
+
+An additional and more nuanced problem than an entirely missing variable is a change in handling of younger household members in the NHTS and in particular whether there were under 18s in the household who were licensed drivers. A slight change in the dataset led to a estimation error due to a coding assumption based on the structure of the 2001 dataset that no longer held in 2017. While it was ultimately resolved, the error is indicative of potential problems in repurposing code written to work with one dataset. Given the extensive number of models and estimation scripts used throughout the VE system, it was impossible in this effort to carefully step through the estimation of each model with the new dataset, and instead errors in the build process and a review of model results were relied upon to evaluate whether the estimation process was successful.
+
+Ultimately and as documented below, it was possible to complete a model build using the 2017 NHTS as processed by the new VENHTS package. The build process updated the estimation of the models that are based on the NHTS. That newly built model ran successfully, and as shown in the comparison of results, the results are moderately different for some performance metrics. 
+
+It was not possible to in this task to do a model by model review of the impact on the estimated model results due to the change in dataset. Some efforts were made to provide tools that support comparison of the estimated models, however the approach taken in saving many of the esitmated model objects using reduced size model objects that only contain the elements required for application mean that meaningful comparisons after the build process had run its course is difficult.
+
+While it has been demonstrated that it is possible to update the NHTS data to a newer version and then re-estimate and run VE, it is a somewhat difficult process that required some imputation in the data to add a variable that is no longer collected in the NHTS, some debugging to isolate estimation failures and their causes, and grappling with non-standard model object formats in order to understand the reasonableness of the newly estimated models. This generally points to some considerations for users and the future development of the VE framework:
+
+1. It is feasible that VE could be updated to new versions of the NHTS (e.g., 2017 or 2022 when it becomes available), although rather than the simple re-estimation without re-specification approach taken here it would be preferable to at least respecify models that include now missing explanatory variables such as home type.
+
+2. Coding differences between the datasets need to be carefully considering and any models that use variables that have been recoded or collected using different parameters should be very carefully explored and considered fof respecificaiton as opposed to relying on the more automated re-estimation relied upon here.
+
+3. For a comprehensive comparison of model estimation across model versions to be successful, it is recommended that complete model objects are saved during the estimation process. This might be included as an option during the build process if it is important to retain the more compact application ready model objects that are currently exported.
+
+4. Given the effort required to update the model system with a later version of the NHTS, which, despite the differences discussed here, was still very similar to the 2001 data, it is likely to be difficult for model users to successfully incorporate a local household travel survey. However, it would be reasonable to focus on a more targetted update to individual modules. 
+
+5. The intial comparison of the results from the 2001 and 2017 applications of RSPM suggest (in a very preliminary finding) that updating the estimation data source moderately (as opoosed to significantly) affects the outputs of the model. This effort did not include the more extenstive sensitivity testing and validation that should be considered for the transition to a new estimation dataset.  
+
+## VENHTS Module Documentation
 
 The VENHTS module is a modified version of the original VE2001NHTS module, which provides three critical changes.
 
@@ -26,7 +64,7 @@ This document provides an brief overview of how the module functions and how the
 
 While this module does not "future proof" any future NHTS data releases, or third-party household travel surveys, the purpose is to provide a transparent documentation of methods for users if they wish to format future NHTS data or inject their own datasets.
 
-## Overview
+### Overview
 
 A key element for users to understand about VisionEval is that modules can have multiple dependencies both upstream, downstream, and in parallel throughout the VisionEval ecosystem. Data in the VENHTS (previously VE2001NHTS) are used in several downstream VE packages. Simply swapping out the data in a module does not only affect that module, but can have cascading impacts if the data are insufficient in subsequent models. Conversely, to have changes be reflected in downstream modules, they must also be re-built using the new upstream data (see build process [LINK]).
 
@@ -100,7 +138,7 @@ The VEHNHTS module contains a single R script `MakeNHTSDataset.R`. This R script
 
 In general, the script is largely the same as the previous `Make2001NHTSDataset.R`, but has been extended and reorganized to allow users to switch between data inputs using the `NHTSYEAR` parameter.
 
-## Pre-processing of NHTS 2017 for VisionEval
+### Pre-processing of NHTS 2017 for VisionEval
 
 For the most part, most columns remain intact between 2017 and 2001 NHTS. However, there are many derived features (e.g., aggregate number of persons at the household level), relabeled features, removed redundancies, and occasionally remove altogether. The table below provides an overall summary "crosswalk" of NHTS 2001 to 2017 columns. For further data attribute details, see the 2001 and 2017 NHTS codebooks:
 
@@ -433,3 +471,191 @@ for(p in chunks) {
 }
 
 ```
+
+### Model results
+
+To test the 2017 NHTS, the two versions of the model were run, the original version of the model with 2001 NHTS and the new version with 2017 NHTS. Below are comparative plots showing select 2010 results from the VERSPM model:
+```{r diagnostics_data_results, eval=T, include=F, message=F, warning=F, comment=F}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, comment = FALSE) 
+# Read in the results for both 2001 and 2017. Convert to data.table for performance
+library(data.table)
+library(gridExtra)
+library(ggplot2)
+library(scales)
+load('./data/resultsnhts2001.rda')
+load('./data/resultsnhts2017.rda')
+
+year <- "2010"
+
+is_integer <- function(x) ifelse(is.numeric(x), 
+                                 all(x %% 1 == 0, na.rm = T) == T,
+                                 F)
+
+compare_plot <- function(params) {
+  fill_colors <- c("2001" = "#8da0cb", "2017" = "#66c2a5")
+
+  for(n in colnames(params)) {
+    assign(n, params[[n]])
+  }
+  var = variable
+  
+  df = resultsnhts2017[[paste0(year,".",table)]]
+  df2001 = resultsnhts2001[[paste0(year,".",table)]]
+  
+  if(plot_type == 'frequency') {
+    agg <- merge(
+      df2001[,.(`2001` = .N), by=var],
+      df[,.(`2017` = .N), by=var],
+      all=T
+    )
+    if(class(agg[[var]]) != 'factor') {
+      agg[[var]] <- as.factor(agg[[var]])
+    }
+    # Fill in NA with obvious missing value
+    if(any(is.na(agg[[var]]))) { 
+      agg[[var]] <- addNA(agg[[var]])
+      levels(agg[[var]]) <- c(levels(agg[[var]]), -999)
+      agg[is.na(get(var))][[var]] <- factor(-999)
+    }
+    
+    agg <- melt(agg, id.vars = var, variable.name = 'NHTS')
+    agg[is.na(value), value := 0]
+    agg[ , N := sum(value), by=NHTS]
+    agg[ , pct := value / N]
+    agg[is.na(var)]
+    
+    plot <- ggplot(agg, aes(x=UQ(as.name(var)), y=pct, fill=NHTS)) + 
+      geom_col(position = 'dodge') +
+      scale_x_discrete(limits=sort(unique(agg[[var]])))
+  } 
+  if(plot_type == 'histogram') {
+    # Setup data
+    dat <- rbind(data.table(NHTS='2001', value=df2001[[var]]),
+                 data.table(NHTS='2017', value=df[[var]]))
+    dat[!is.finite(value), value := 0]
+    
+    if(!is.na(clip)) {
+      dat <- dat[value<clip]
+    }
+    
+    # Bin widths
+    if (nrow(dat) == 2) {
+      bw <- 2
+    } else {
+      bw <- 2 * IQR(dat[value>0,value], na.rm = T) / (max(dat$value, na.rm=T) - min(dat$value,
+                                                                                    na.rm=T))^(1/3)
+    }
+
+    # Initialize plot
+    if (!(is.na(bw)) & (bw <= 0)) {
+      plot <- ggplot(dat, aes(x=value, fill=NHTS)) +
+      geom_histogram(position = 'dodge',
+                     aes(y=after_stat(
+                       c(count[group==1]/sum(count[group==1]),
+                         count[group==2]/sum(count[group==2]))))) +
+                       scale_y_continuous("Percent of sample",
+                       labels=scales::percent_format(accuracy=1),
+                       trans = ylog)
+    } else {
+      plot <- ggplot(dat, aes(x=value, fill=NHTS)) +
+      geom_histogram(position = 'dodge', binwidth = bw,
+                     aes(y=after_stat(
+                       c(count[group==1]/sum(count[group==1]),
+                         count[group==2]/sum(count[group==2]))))) +
+                       scale_y_continuous("Percent of sample",
+                       labels=scales::percent_format(accuracy=1),
+                       trans = ylog)
+    }
+    }
+  
+  if(plot_type == 'bar') {
+    # Setup data
+    dat <- rbind(data.table(NHTS='2001', value=df2001[[var]]),
+                 data.table(NHTS='2017', value=df[[var]]))
+    dat[!is.finite(value), value := 0]
+    
+    if(!is.na(clip)) {
+      dat <- dat[value<clip]
+    }
+    
+    # Initialize plot
+    plot <- ggplot(dat, aes(x=NHTS, y = value, lable = value, fill=NHTS)) +
+      geom_col() +
+      geom_text(aes(label = comma(value))) +
+      scale_y_continuous("Value")
+    }
+  
+  # Update some aesthetics
+  plot <- plot + 
+    xlab(var) +
+    theme_classic() + 
+    theme(axis.text.x = element_text(angle = xangle, hjust=-1)) +
+    scale_fill_manual(values = fill_colors)
+  
+  return(plot)
+}
+
+# Manually set plot settings
+compare_vars <- fread('./data/plot_settings_results.csv')
+```
+
+```{r plots_results, eval=T, echo=F, out.height="20%", out.width="100%", warning=F}
+# chunker <- function(x, n) split(x, sort(x %% (length(x) %/% n)))
+chunker <- function(x, n) split(x, ceiling(seq_along(x) / n))
+plots_results <- lapply(split(compare_vars, compare_vars$variable), compare_plot)
+chunks <- chunker(1:length(plots_results), 6)
+
+for(p in chunks) {
+  do.call("grid.arrange", c(plots_results[p], ncol=2))
+}
+
+```
+
+### Estimation Comparison
+
+```{r read_inputs, include=FALSE}
+
+# Diagnostics list object
+estlist <- readRDS("./data/LIST_PACKAGES_COMPARE_LIST.RDS")
+
+```
+
+A proof of concept script has been developed to import the model objects from two builds of VE, in this case the original 2001 version of the model and the build completed with the  2017 NHTS dataset. This provides a structured list holding the estimated model objects from every module, an indication of whether the model objects changed between the reference and updated model version, and then some example comparisons between model objects.
+
+However, the ability to carry out a comprehensive comparison between models is limited by the removal of many of the estimation outputs from the model objects during their reformatting to smaller objects for application purposes. 
+
+The tables below show some example comparisons between the auto ownership models in the VEHouseholdVehicles package, listing the model objects, a summary of the variables in the models that have changed signficantly, and then a more comprehensive comparison between the two sets of models. In general, it is recommended that model users compare:
+
+1. Overal model fit statistics (such as R squared from a linear regression, Rho squared from a logit model, or other statistics such as AIC)
+2. Coefficient level changes between models such as changes in sign and magnitude
+3. Changes in coefficient statistical significance
+4. Fit between the model's predicted values and the estimation dataset or an independent validation dataset
+5. Changes in overall model sensitivity and the reasonable of model forecasts given changes in inputs.
+
+```{r setup2, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, results = TRUE)
+```
+
+
+```{r est-modules-estimation1, fig.cap="VEHouseholdVehicles-AutoOwnModels_ls.rda-SegmentsModels"}
+
+knitr::kable(estlist$VEHouseholdVehicles$AutoOwnModels_ls.rda$SegmentsModels)
+
+```
+
+```{r est-modules-estimation2, fig.cap="VEHouseholdVehicles-AutoOwnModels_ls.rda-Summary"}
+
+knitr::kable(estlist$VEHouseholdVehicles$AutoOwnModels_ls.rda$Summary)
+
+```
+
+```{r est-modules-estimation3, fig.cap="VEHouseholdVehicles-AutoOwnModels_ls.rda-Comparison"}
+
+knitr::kable(estlist$VEHouseholdVehicles$AutoOwnModels_ls.rda$Comparison)
+
+```
+
+
+
+
+
