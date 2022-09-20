@@ -109,7 +109,7 @@ The files are named according file type, (e.g., csv\_), record type ("h" for hou
 VE was originally coded using an older PUMS file, which had slightly different field names and must be renamed. A name mapping key is in the table below:
 
 | Table name              | VESimHouseholds field | New PUMS field | Description                               |
-|-----------------|----------------|------------|------------------------------------|
+|-------------------------|-----------------------|----------------|-------------------------------------------|
 | **pums_households.csv** | SERIALNO              | SERIALNO       | Housing/Group Quarters Unit Serial Number |
 |                         | PUMA5                 | PUMA           | 5% Public Use Microdata Area code         |
 |                         | HWEIGHT               | WGTP           | Housing unit weight                       |
