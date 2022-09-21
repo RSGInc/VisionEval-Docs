@@ -8,13 +8,39 @@ knitr::opts_chunk$set(echo = TRUE, results='hide')
 
 This chapter describes the package build process for creating or modifying packages and their constituent modules within the VisionEval framework. The build process can be used to incorporate localized or custom data into VE by making a change to a module and then rebuilding it. This chapter includes a simple case study example of substituting the default households population data with a locally-specific Public Use Microdata Sample (PUMS) from the US Census, and then rebuilding the package in VisionEval.
 
-A summary of steps described are:
+More detailed instructions are described below, but a summary of steps are:
 
-1.  Prerequisites: Installing R and RStudio.
-2.  Install VisionEval environment.
-3.  Install VisionEval package source.
-4.  Replace data: Download data and place in the package source location.
-5.  Package rebuild: Configure building and run package build.
+1.  Make sure you have a running VisionEval that you can start with RStudio.
+
+    -   Install R (ideally Version 4.1.3)
+    -   Install RStudio and start it directly. Verify that it is using the R 4.1.3 version
+    -   Download the VisionEval for R 4.1.3 Installer. Unzip it into a convenient directory (we'll call that the "VisionEval directory")
+    -   Check that VisionEval starts by double-clicking VisionEval.Rpro in the VisionEval directory
+
+2.  Install the VisionEval package source code
+
+    -   Download the VisionEval for R 4.1.3 Source Code. WARNING This file is huge (over a Gigabyte)
+    -   Unzip it into the VisionEval directory from the last step. You should then have a "src" folder inside the VisionEval directory.
+
+3.  Start VisionEval by clicking the VisionEval.Rproj file if not already left running (same as at the end of Step 1 above).
+
+4.  Gather the new PUMS .csv files, process, and replace the .csv files in the VisionEval/src/VESimHouseholds/inst/extdata directory
+
+    -   pums_persons.csv
+    -   pums_households.csv
+
+5.  Configure the RStudio Build Tools
+
+    -   pick "Build" from the RStudio top menu then "Configure Build Tools. . ."
+    -   choose "Package" in the "Project Build Tools" dropdown.
+    -   Browse to the package directory: VisionEval/src/VESimHouseholds, where "VisionEval" is the full path of your VisionEval directory.
+    -   Leave all the other defaults as they are.
+
+6.  Install the package two times.
+
+    -   From the "Build" menu, choose "Install Package" (that will rebuild the R data files)
+    -   Then do it again: "Build" menu, then "Install Package" (that will put the rebuilt files into the R package)
+    -   The resulting new version of VESimHouseholds will then be installed with your
 
 ## Context
 
@@ -48,17 +74,9 @@ The primary census program is the Decennial Census, which is a comprehensive cou
 
 The summary tables provide the total count of persons, but are aggregated, meaning that it only shows the total number of persons in each topic, but not the combination of topics. For example, we may know the count of people by age group, gender, occupation, and household size; but we do not know the count for a particular combination of those variables, or to which household they belong. For this reason, the US Census Bureau also releases what it calls a Public Use Microdata Sample (PUMS) using sample data from the ACS.
 
-## Instructions
+## Detailed Instructions
 
-The following steps will be described in more detail below:
-
-1.  Prerequisites: Installing R and RStudio.
-2.  Install VisionEval environment.
-3.  Install VisionEval package source.
-4.  Replace data: Download data and place in the package source location.
-5.  Package rebuild: Configure building and run package build.
-
-#### 1. Install R and RStudio
+### Step 1a) Install R and RStudio
 
 R is a free software environment for statistical computing. On its own, R is an interpreted programming language executed using a command line interface, meaning the code does not need to be compiled. However, the R community has an integrated development environment (IDE) specific to R called RStudio (being renamed Posit in October 2022) which provides a user friendly graphical interface to allow users to develop and execute commands as well as to inspect and visualize the data as it is handled in R.
 
@@ -68,19 +86,15 @@ To install R and RStudio, users must first download and install R, and then down
 
 -   RStudio for windows can be downloaded here: <https://www.rstudio.com/products/rstudio/download/>
 
-#### 2. Install VisionEval Environment
+### Step 1b) Install VisionEval Environment
 
 This zip file contains a pre-built standalone copy of VisionEval 2.0 for Windows (approx. 555MB file). It contains the entire VisionEval framework environment code, sample models, and all necessary R packages installed into the R VisionEval environment.
 
-A. Download the [VE-2.0-Installer-Windows-R4.1.2_2022-01-03.zip](https://github.com/VisionEval/VisionEval/releases/download/public-2.0/VE-2.0-Installer-Windows-R4.1.2_2022-01-03.zip) from <https://visioneval.org/category/download.html>
-
-B. Extract the entire contents of the zip file into a directory of your choice (e.g., `C:/Users/<user name>/Documents/VisionEval`) .
-
-C. To start the VisionEval environment, navigate to this folder and double click `VisionEval.Rproj`.
+Download the [VE-2.0-Installer-Windows-R4.1.2_2022-01-03.zip](https://github.com/VisionEval/VisionEval/releases/download/public-2.0/VE-2.0-Installer-Windows-R4.1.2_2022-01-03.zip) from <https://visioneval.org/category/download.html> and extract the entire contents of the zip file into a directory of your choice (e.g., `C:/Users/<user name>/Documents/VisionEval`) .
 
 Note: Advanced users may also Build VisionEval natively from source, but this process can take several hours. See VisionEval-Dev full model build %%%%LINK TO%%%%
 
-#### 3. Download VisionEval source code
+### Step 2) Download VisionEval source code
 
 In the previous step, users have downloaded the pre-built VisionEval environment, but to make modifications to the package data users must re-build the packages from the source code.
 
@@ -92,7 +106,11 @@ In the previous step, users have downloaded the pre-built VisionEval environment
 
 [![Manual download of VisionEval source code](images/gitscreenshot.png){width="743"}](https://github.com/VisionEval/VisionEval/archive/refs/heads/master.zip)
 
-#### 4. Replace data:
+### Step 3) Start VisionEval environment
+
+To start the VisionEval environment, navigate to your VisionEval environment folder (e.g., `C:/Users/<user name>/Documents/VisionEval`) and double click `VisionEval.Rproj`.
+
+### Step 4) Gather PUMS and replace data:
 
 In this example we will be replacing the default PUMS data in the VESimHouseholds package with different local PUMS data. The source code for this package should be located in sources/modules folder of your source packages folder (e.g, `C:/Users/<user name>/Documents/VisionEval-source/sources/modules/VESimHouseholds`).
 
@@ -109,7 +127,7 @@ The files are named according file type, (e.g., csv\_), record type ("h" for hou
 VE was originally coded using an older PUMS file, which had slightly different field names and must be renamed. A name mapping key is in the table below:
 
 | Table name              | VESimHouseholds field | New PUMS field | Description                               |
-|-------------------------|-----------------------|----------------|-------------------------------------------|
+|-----------------|-----------------|-----------------|---------------------|
 | **pums_households.csv** | SERIALNO              | SERIALNO       | Housing/Group Quarters Unit Serial Number |
 |                         | PUMA5                 | PUMA           | 5% Public Use Microdata Area code         |
 |                         | HWEIGHT               | WGTP           | Housing unit weight                       |
@@ -124,13 +142,13 @@ VE was originally coded using an older PUMS file, which had slightly different f
 
 Depending on the file, other pre-processing may be required, such as removing NAs or converting categories. For example, missing NA values to 0 in HINC, shifting UNITYPE scale from {1,2,3} to {0,1,2}, or aggregating the 4-level WKL categories into 3-levels of WRKLYR. If these conversions are not made, issues may rrise in the package building step.
 
-For a more detailed example of processing PUMS with example R scripts, see %%%%LINK TO ADVANCED INSTRUCTIONS %%%%
+For a more detailed example of processing PUMS with example R scripts, see %%%%LINK TO
 
 *C) Replace PUMS files*
 
 Once processing is complete, replace the old files in your VisionEval [source]{.underline} package location with the the new `pums_households.csv` and `pums_persons.csv`. External data for VisionEval packages are typically located in the `inst/exdata` folder (e.g., `C:/Users/<user name>/Documents/VisionEval-source/sources/modules/VESimHouseholds/inst/extdata`) .
 
-#### 5. Package building
+### Step 5) Package building
 
 The critical objective of re-building a package is to build a package ***from*** the package source ***to*** the VisionEval environment. To achieve this:
 
@@ -180,4 +198,478 @@ Click the "Build" drop-down from the main banner menu again. This time there wil
 
 After one successful build, it is strongly recommended that you run build again. This is to ensure that the the new source data files have been generated and propagated through to the VisionEval environment as a package.
 
-At this point the new data should now be imported and usable through the VESimHouseholds package. This can be tested by inspecting the data against the old using `VESimHouseholds::Hh_df`.
+Done!
+
+This this point the new data should now be imported and usable through the VESimHouseholds package. This can be tested by inspecting the data against the old using `VESimHouseholds::Hh_df`.
+
+## Advanced Build Process
+
+This sections contains miscellaneous information that may be useful for more advanced users.
+
+1.  VisionEval Package Structure
+2.  Build from command line
+3.  PUMS data processing helper scripts
+4.  Modifying package code
+
+### VisionEval Package Structure
+
+VisionEval packages will generally have a structure similar to the following:
+
+    source/modules/VEGenericPackage
+    ├───data
+    │   ├─ GenericPackageSpecifications.rda
+    │   ├─ GenericPackage_df.rda
+    │   └─ GenericPackage_ls.rda
+    ├───R
+    │   ├─ CreateEstimationDatasets.R
+    │   └─ GenericModel.R
+    └───inst
+        └─ extdata
+            ├─ input_data1.csv
+            └─ input_data2.txt
+
+-   `inst\extdata` is where "external" input data sources and reference files will be placed
+
+-   The `R` directory contains any R scripts used in the packages. These must be independent non-sequential scripts that do not depend on results from other scripts.
+
+-   `data` contains the resulting data that VisionEval generates and utilizes.
+
+-   `man` and `inst\module_docs`, contain the markdown documentation generated during the build process.
+
+### Build from command line
+
+While the GUI method is intuitive, it can be convenient to simply execute a build command from a generic R session rather than navigating menu trees in the GUI.
+
+The fundamental command to build an r package can be run from R console using `system("R CMD INSTALL package_path -l lib_path")`. The GUI method essentially constructs this command and executes it.
+
+-   `package_path` is the path to the package you are building. If your working directory is already located in the package, you can use `.` to denote the local directory.
+-   `lib_path` is the runtime environment, in this case the VisionEval environment:
+
+<!-- -->
+
+    system("R CMD INSTALL "C:\Users\<user name>\Documents\VisionEval-source\sources\modules\VESimHouseholds" -l "C:\Users\<user name>\Documents\VisionEval\ve-lib")
+
+### PUMS data processing helper scripts
+
+Processing PUMS data can be challenging for two reasons.
+
+1.  PUMS data evolves, with some field names and levels changing.
+2.  The 2000 PUMS are stored in a compressible serial text file structure, rather a common delimited file (e.g., CSV), making importing tedious.
+
+Below are some helper scripts for future users to build upon:
+
+NOTE: These may not work with all PUMS file years, operating systems, or R versions. Best effort was made to identify weak points (e.g., unzipping), but cannot be guaranteed. These scripts are meant to be a starting point, not a production level code.
+
+### PUMS File import and header processing
+
+``` r
+# IMPORTS
+library(data.table)
+library(tools)
+
+
+# Function to process PUMS as it is read in
+process_acs_pums <- function(PumsFile, type, GetPumas='ALL') {
+  # ACS PUMS to legacy Census PUMS fields
+  # Make any modifications here as necessary
+  meta = list(
+    'h' = list(
+      SERIALNO = list(acsname = 'SERIALNO', class ='character'),
+      PUMA5 = list(acsname='PUMA', class='character'),
+      HWEIGHT = list(acsname='WGTP', class='numeric'),
+      UNITTYPE = list(acsname='TYPE', class='numeric'),
+      PERSONS = list(acsname='NP', class='numeric'),
+      BLDGSZ = list(acsname='BLD', class='character'),
+      HINC = list(acsname='HINCP', class='numeric')
+    ),
+    'p' = list(
+      SERIALNO = list(acsname = 'SERIALNO', class ='character'),
+      AGE = list(acsname='AGEP', class='numeric'),
+      WRKLYR = list(acsname='WKL', class='character'),
+      MILITARY = list(acsname='MIL', class='numeric'),
+      INCTOT = list(acsname='PINCP', class='numeric')
+    )
+  )
+  
+  colNames <- lapply(meta, function(x) sapply(x, function(y) y[['acsname']]))
+  colclass <- lapply(meta, function(x) sapply(unname(x), function(y) {
+    setNames(y[['class']], y[['acsname']])
+  }))
+  
+  
+  
+  if(Sys.info()['sysname'] == 'Windows') {
+    cmd <- paste0("unzip -p '", PumsFile, "'")
+  }
+  
+  if(Sys.info()['sysname'] == 'Linux') {
+    cmd <- paste0("gunzip -cq '", PumsFile,"'")
+  }
+  
+# Checks if it is a zip file or a bytefile
+  if(grepl('.zip', PumsFile)) {
+    df <- fread(cmd = cmd, 
+                select = names(colclass[[type]]),
+                colClasses = colclass[[type]])
+  } else {
+    df <- fread(PumsFile,
+                select = names(colclass[[type]]),
+                colClasses = colclass[[type]])
+  }
+  
+  # Rename ACS PUMS fields to match legacy Census PUMS fields
+  setnames(df, colNames[[type]], names(colNames[[type]]))
+  
+  return(df)
+}
+
+process_2000_pums <- function(PumsFile, GetPumas='ALL') {
+  #Read in file and split out household and person tables
+  Pums_ <- readLines(PumsFile)
+  RecordType_ <- 
+    as.vector(sapply(Pums_, function(x) {
+      substr(x, 1, 1)
+      }))
+  H_ <- Pums_[RecordType_ == "H"]
+  P_ <- Pums_[RecordType_ == "P"]
+  rm(Pums_, RecordType_, PumsFile)
+  
+  #Define a function to extract specified PUMS data and put in data frame
+  extractFromPums <- 
+    function(Pums_, Fields_ls) {
+      lapply(Fields_ls, function(x) {
+        x$typeFun(unlist(lapply(Pums_, function(y) {
+          substr(y, x$Start, x$Stop)
+        })))
+      })
+    }
+  
+  #Identify the housing data to extract
+  HFields_ls <-
+    list(
+      SERIALNO = list(Start = 2, Stop = 8, typeFun = as.character),
+      PUMA5 = list(Start = 19, Stop = 23, typeFun = as.character),
+      HWEIGHT = list(Start = 102, Stop = 105, typeFun = as.numeric),
+      UNITTYPE = list(Start = 108, Stop = 108, typeFun = as.numeric),
+      PERSONS = list(Start = 106, Stop = 107, typeFun = as.numeric),
+      BLDGSZ = list(Start = 115, Stop = 116, typeFun = as.character),
+      HINC = list(Start = 251, Stop = 258, typeFun = as.numeric)
+    )
+  
+  #Extract the housing data and clean up
+  H_df <- data.frame(extractFromPums(H_, HFields_ls), stringsAsFactors = FALSE)
+  #Extract records for desired PUMAs
+  if (GetPumas[1] != "ALL") {
+    H_df <- H_df[H_df$PUMA5 %in% GetPumas,]
+  }
+
+  #Identify the person data to extract
+  PFields_ls <-
+    list(
+      SERIALNO = list(Start = 2, Stop = 8, typeFun = as.character),
+      AGE = list(Start = 25, Stop = 26, typeFun = as.numeric),
+      WRKLYR = list(Start = 236, Stop = 236, typeFun = as.character),
+      MILITARY = list(Start = 138, Stop = 138, typeFun = as.numeric),
+      INCTOT = list(Start = 297, Stop = 303, typeFun = as.numeric)
+    )
+  
+  #Extract the person data and clean up
+  P_df <- data.frame(extractFromPums(P_, PFields_ls), stringsAsFactors = FALSE)
+  #If not getting data for entire state, limit person records to be consistent
+  if (GetPumas[1] != "ALL") {
+    P_df <- P_df[P_df$SERIALNO %in% unique(H_df$SERIALNO),]
+  }
+
+  return( list('p' = P_df, 'h' = H_df) )
+}
+```
+
+### PUMS data web-scraping
+
+This has been automated one step further by scraping the data and running the above functions on the files as they are read in.
+
+``` r
+
+# Downloads and processes legacy 2000 PUMS data
+getDecPUMS <- function(STATE, output_dir = NA){
+  #VARS
+  state_codes <- fread('state.txt')
+  state_codes <- setNames(state_codes$STATE, state_codes$STUSAB)
+  base_url = 'https://www2.census.gov/census_2000/datasets/PUMS/FivePercent'
+  
+  if(length(STATE) > 2 & !is.numeric(STATE)) {
+    STATE <- state.abb[match(toTitleCase(STATE),state.name)]
+  }
+  STATE_NAME <- state.name[match(toupper(STATE),state.abb)]
+  
+  
+  if(!is.numeric(STATE)) STATE_NUM <- state_codes[toupper(STATE)]
+  
+  
+  # Download the PUMS data to tempfile and load directly to data table
+  url <- file.path(base_url,
+                   STATE_NAME,
+                   paste0('REVISEDPUMS5_', sprintf("%02d", STATE_NUM), '.TXT'))
+  
+  temp <- tempfile()
+  download.file(url, temp)
+  
+  # Read .txt to data frames
+  PUMS <- process_2000_pums(temp)
+  
+  # SAVE OUTPUT
+  if(!is.na(output_dir)) {
+    if(!dir.exists(output_dir)) dir.create(output_dir)
+    fwrite(PUMS[['p']], file.path(output_dir, 'pums_persons.csv'))
+    fwrite(PUMS[['h']], file.path(output_dir, 'pums_households.csv'))
+  } else {
+    return(PUMS)
+  }
+}
+
+# Downloads and processes post-2000 PUMS
+getACSPUMS <- function(STATE, YEAR='2000', GetPumas='ALL', output_dir, save_zip = T){
+  #VARS
+  try({
+    state_codes <- fread('state.txt')
+    state_codes <- setNames(state_codes$STATE, state_codes$STUSAB)
+    })
+  base_url = 'https://www2.census.gov/programs-surveys/acs/data/pums'
+  
+  
+  if(length(STATE) > 2 & !is.numeric(STATE)) {
+    STATE <- tolower(state.abb[match(toTitleCase(STATE),state.name)])
+  }
+  
+ 
+  # Download the PUMS data to tempfile and load directly to data table
+  PUMS <- lapply(c('p', 'h'), function(f) {
+    url <- file.path(base_url, YEAR, '5-Year',
+                     paste0('csv_', f, tolower(STATE), '.zip'))
+    
+    if(save_zip == F){
+      temp <- tempfile()
+    } else {
+      temp <- file.path(output_dir, basename(url))
+    }
+    
+    download.file(url, temp)
+    df <- process_acs_pums(temp, type=f, GetPumas)
+  
+    return(df)
+  })
+  names(PUMS) <- c('p', 'h')
+  
+  
+  # SAVE OUTPUT
+  if(!is.na(output_dir)) {
+    if(!dir.exists(output_dir)) dir.create(output_dir)
+    fwrite(PUMS[['p']], file.path(output_dir, 'pums_persons.csv'))
+    fwrite(PUMS[['h']], file.path(output_dir, 'pums_households.csv'))
+  } else {
+    return(PUMS)
+  }
+}
+```
+
+## VEPowertrainsandFuels
+
+This case study explores the challenge of modifying the package code itself rather than only the data. The objective of this case study is to define a custom function which alters the default data values as they are read into VisionEval during the build process.
+
+This section walks users through modifying the data as they are read in to VisionEval. Before modifying the code, a brief analysis is conducted to define a modifying function and demonstrate the effects if the modifications. The next subsection utilizes the function in the `LoadDefaultValues.R` script to modify `hh_powertrain_prop.csv` as the data are read in.
+
+**Note:** The same results of this case study can be achieved by simply modifying the hh_powertrain_prop.csv input file, but the code itself will be modified for demonstration.
+
+### 1. Data
+
+`VEPowertrainsAndFuels\inst\extdata\hh_powertrain_prop.csv` are the default powertrain proportions contained in the package, which resembles the table below (the table is compressed to select years for clarity). The file's purpose is to provide the proportion of vehicle powertrain types by vehicle type (auto and light trucks) and vehicle vintage year.
+
+| ModelYear | AutoPropIcev | AutoPropHev | AutoPropPhev | AutoPropBev | LtTrkPropIcev | LtTrkPropHev | LtTrkPropPhev | LtTrkPropBev |
+|--------|--------|--------|--------|--------|--------|--------|--------|--------|
+| 1975      | 1            | 0           | 0            | 0           | 1             | 0            | 0             | 0            |
+| 2000      | 1            | 0           | 0            | 0           | 1             | 0            | 0             | 0            |
+| 2010      | 0.8786       | 0.1213      | 0            | 0.0001      | 0.9820        | 0.0180       | 0             | 0            |
+| 2020      | 0.8212       | 0.0788      | 0.0202       | 0.0798      | 0.9524        | 0.0143       | 0.0067        | 0.0266       |
+| 2030      | 0.6676       | 0.0908      | 0.0358       | 0.2058      | 0.9093        | 0.0179       | 0.0106        | 0.0622       |
+| 2040      | 0.5701       | 0.0922      | 0.0403       | 0.2974      | 0.8996        | 0.0191       | 0.0114        | 0.0698       |
+| 2050      | 0.5198       | 0.0895      | 0.0407       | 0.3500      | 0.8916        | 0.0193       | 0.0119        | 0.0772       |
+
+The table contains two powertrain proportions, the left-most four columns are for automobiles (i.e., `AutoProp`) and the right-most are for light trucks (i.e., `LtTrkProp`). Each will sum up to 1 (for a rowsum of 2).
+
+### 2. Analysis
+
+To begin, the code snippets below conduct a brief exploratory analysis to demonstrate visually what the data look like and how they will be modified. Using some helper packages `ggplot2` and `reshape` we can format the data for visualization. **Note:** These packages are not necessary for modifying the data in VisionEval, but are used for formatting and plotting in this case study.
+
+    # Additional packages
+    library(ggplot2)
+    library(reshape)
+
+    # Load data, uncomment it to run in your project
+    hh_powertrain_prop <- read.csv('.YOUR_PACKAGE_DIRECTORY/inst/extdata/hh_powertrain_prop.csv')
+
+    melted_powertrains <- reshape::melt(hh_powertrain_prop, id.vars = 'ModelYear')
+
+    ggplot(data = melted_powertrains) +
+      geom_line(aes(x=ModelYear, y=value, color=variable)) +
+      scale_y_continuous(labels=scales::percent) +
+      theme_classic()
+
+![Household Powertrain Proportions](images/hh_powertrain_prop_view.png){width="75%"}
+
+We can see that battery electric vehicles (BEV), specifically automobiles, are projected to make up the majority of vehicles bought in future years. This causes the share of internal combustion engine to decline proportionally.
+
+Let us assume that the state government is deciding whether to aggressively promote BEV cars starting in 2025. The policies cause the share of alternative powertrains (BEV, HEV, and PHEV) to increase more over time. To model this increase, we will use an arbitrary function which adds to the current value of $x$ (i.e., the proportion) at a quadratic rate.
+
+$$
+f(x) = x + x^2 (1 - x)
+$$ We then create a wrapper function that adjusts each of the alternative powertrains using our custom modeling function. To ensure that the proportions sum up to 1 for autos and light trucks, respectively, we then calculate the remaining proportion of ICE powertrains by subtracting the proportion of alternative powertrains.
+
+    # Wrapper function to adjust the powertrain data
+    adjust_powertrain <- function(powertrain_df, start_year) {
+      # Define our adjustment functions
+      adj_fun <- function(xv) xv + (xv^2) * (1 - xv)
+
+      # Which columns to modify
+      cols <- colnames(powertrain_df)
+      ev_cols <- cols[grepl('Hev|Phev|Bev', cols)]
+      ice_cols <- cols[grepl('Icev', cols)]
+
+      # Create the modified data frame
+      df_mod <- powertrain_df
+      yrs_idx <- df_mod$ModelYear > start_year
+
+      # Adjust the alternate powertrain data (BEV, PHEV, HEV) data
+      df_mod[yrs_idx, ev_cols] <- apply(powertrain_df[yrs_idx, ev_cols], 2, adj_fun)
+
+      # Subtract the amount of remaining internal combustion engines (ICE)
+      for(x in ice_cols){
+        sum_cols <- ev_cols[grepl(gsub('Icev', '', x), ev_cols)]
+        df_mod[yrs_idx, eval(x)] <- 1 - rowSums(df_mod[yrs_idx, sum_cols])
+      }
+
+      return(df_mod)
+    }
+
+The adjusted inputs can be combined with the existing data. The combined plot shows an noticeable increase in alternative powertrain vehicle shares for later vintage years.
+
+    hh_powertrain_prop_high <- adjust_powertrain(hh_powertrain_prop, 2025)
+
+    melted_powertrains <- rbind(
+      cbind(reshape::melt(hh_powertrain_prop, id.vars = 'ModelYear'), type='existing'),
+      cbind(reshape::melt(hh_powertrain_prop_high, id.vars = 'ModelYear'), type='high')
+      )
+
+    ggplot(data = melted_powertrains) +
+      geom_line(aes(x=ModelYear, y=value, color=variable, linetype=type)) +
+      scale_y_continuous(labels=scales::percent) +
+      theme_classic()
+
+![Adjusted Household Powertrain Proportions](images/hh_powertrain_prop_adjustedview.png){width="75%"}
+
+### 3. Function modification
+
+Once a model user is satisfied with the effects that are represented by applying the modifying function, the `LoadDefaultValues.R` can be edited to include the function. Beginning on line #422, the R script initializes the household powertrain datastore input, then loads in the CSV file using `processEstimationInputs`. We can insert the new function after the data has been loaded but before it has been stored and cleaned up at `PowertrainFuelDefaults_ls$HhPowertrain_df <- HhPowertrain_df`.
+
+    #----------------------------------------
+    #Household vehicle powertrain proportions
+    #----------------------------------------
+    #Specify input file attributes
+    Inp_ls <- items(
+      item(
+        NAME = "ModelYear",
+        TYPE = "integer",
+        PROHIBIT = c("NA", "< 0"),
+        ISELEMENTOF = "",
+        UNLIKELY = "",
+        TOTAL = ""
+      ),
+      item(
+        NAME =
+          items("AutoPropIcev",
+                "AutoPropHev",
+                "AutoPropPhev",
+                "AutoPropBev",
+                "LtTrkPropIcev",
+                "LtTrkPropHev",
+                "LtTrkPropPhev",
+                "LtTrkPropBev"),
+        TYPE = "double",
+        PROHIBIT = c("NA", "< 0", "> 1"),
+        ISELEMENTOF = "",
+        UNLIKELY = "",
+        TOTAL = ""
+      )
+    )
+    #Load and process data
+    HhPowertrain_df <-
+      processEstimationInputs(
+        Inp_ls,
+        "hh_powertrain_prop.csv",
+        "LoadDefaultValues.R")
+    #Check whether all years are present
+    Years_ <- 1975:2050
+    if (!all(Years_ %in% HhPowertrain_df$ModelYear)) {
+      stop(paste(
+        "File 'hh_powertrain_prop.csv' must have values for at least the years",
+        "from 1975 through 2050", sep = " "))
+    }
+    #Check that powertrain proportion are 0 when powertrain characteristics are NA
+    Msg_ <- character(0)
+    for (ty in c("Auto", "LtTrk")) {
+      for (pt in c("Icev", "Hev", "Phev", "Bev")) {
+        PtType <- paste0(ty, pt)
+        PropName <- paste0(ty, "Prop", pt)
+        CharName <- paste0(ty, pt, "Mpg")
+        if (pt == "Bev") CharName <- paste0(ty, pt, "Mpkwh")
+        Prop_ <- HhPowertrain_df[[PropName]]
+        Char_ <- PowertrainFuelDefaults_ls$LdvPowertrainCharacteristics_df[[CharName]]
+        if (any(Prop_[is.na(Char_)] != 0)) {
+          Msg <- paste0(
+            "hh_powertrain_prop.csv file error. Non-zero proportion(s) for ",
+            PropName, " where NA values in ldv_powertrain_characteristics.csv for ",
+            CharName)
+          Msg_ <- c(Msg_, Msg)
+        }
+      }
+    }
+    if (length(Msg_) != 0) {
+      stop(paste(Msg_, collapse = ", "))
+    }
+
+    #>>>>>>>>> NEW FUNCTION BEGINS
+    adjust_powertrain <- function(powertrain_df, start_year) {
+      # Define our adjustment functions
+      adj_fun <- function(xv) xv + (xv^2) * (1 - xv)
+
+      # Which columns to modify
+      cols <- colnames(powertrain_df)
+      ev_cols <- cols[grepl('Hev|Phev|Bev', cols)]
+      ice_cols <- cols[grepl('Icev', cols)]
+
+      # Create the modified data frame
+      df_mod <- powertrain_df
+      yrs_idx <- df_mod$ModelYear > start_year
+
+      # Adjust the alternate powertrain data (BEV, PHEV, HEV) data
+      df_mod[yrs_idx, ev_cols] <- apply(powertrain_df[yrs_idx, ev_cols], 2, adj_fun)
+
+      # Subtract the amount of remaining internal combustion engines (ICE)
+      for(x in ice_cols){
+        sum_cols <- ev_cols[grepl(gsub('Icev', '', x), ev_cols)]
+        df_mod[yrs_idx, eval(x)] <- 1 - rowSums(df_mod[yrs_idx, sum_cols])
+      }
+
+      return(df_mod)
+    }
+
+    #<<<<<<<<< END OF NEW FUNCTION
+
+    #Add to PowertrainFuelDefaults_ls and clean up
+    PowertrainFuelDefaults_ls$HhPowertrain_df <- HhPowertrain_df
+    rm(Inp_ls, HhPowertrain_df)
+
+### 4. Build
+
+The previous step generated the R data files, and you will need to re-build and re-install the VEPowertrainsAndFuels package for VisionEval to use this new input data. Any of the three build processes described above can be used.
+
+Once the package re-build is complete, your new powertrain data will be ready to use in a VisionEval model run.
