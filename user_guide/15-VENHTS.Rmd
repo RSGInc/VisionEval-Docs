@@ -582,8 +582,8 @@ compare_plot <- function(params) {
     plot <- ggplot(dat, aes(x=NHTS, y = value, lable = value, fill=NHTS)) +
       geom_col() +
       geom_text(aes(label = comma(value))) +
-      scale_y_continuous("Value")
-    }
+      scale_y_continuous(name = "Value")
+  }
   
   # Update some aesthetics
   plot <- plot + 
@@ -611,6 +611,78 @@ for(p in chunks) {
 
 ```
 
+``` {r diagnostics_data_results, eval=T, include=F, message=F, warning=F, comment=F}
+
+# New visualization of percent changes between NHTS years
+
+library(doBy)
+library(dplyr)
+
+# Set up data into dfs
+results2001_df <- rbindlist(resultsnhts2001, fill=T)
+results2017_df <- rbindlist(resultsnhts2017, fill=T)
+
+var_list <- as.list(compare_vars$variable)
+  append_list <- list("Bzone")
+  var_list_2 <- append(append_list, var_list)
+  length(unique(results2001_df$Bzone))
+  length(unique(results2017_df$Bzone))
+
+filter_2001 <- as.data.frame(results2001_df[,unlist(var_list_2),with=F])
+filter_2017 <- as.data.frame(results2017_df[,unlist(var_list_2),with=F])
+
+# Collapse for variable sums
+filter_2001[is.na(filter_2001)] <- 0
+    collapse_2001 <- summaryBy(.~ Bzone, FUN = c(sum), data = filter_2001)
+filter_2017[is.na(filter_2017)] <- 0
+    collapse_2017 <- summaryBy(.~ Bzone, FUN = c(sum), data = filter_2017)
+
+collapse_2001 = subset(collapse_2001, select = -c(Bzone))
+    collapse_2001 <- as.data.frame(sapply(collapse_2001, sum))
+collapse_2017 = subset(collapse_2017, select = -c(Bzone))
+    collapse_2017 <- as.data.frame(sapply(collapse_2017, sum))
+    
+# Merge and calculate percent change between 2001 and 2017 data 
+merged <- cbind(collapse_2001, collapse_2017)
+  names(merged)[1] <- "var2001"
+  names(merged)[2] <- "var2017"
+  merged$Percent_change <- ((merged$var2001-merged$var2017)/merged$var2001)
+  merged$Percent_change <- round(merged$Percent_change, digit=4)
+  merged<-merged[!(merged$Percent_change==0),]
+  merged <- merged[!is.na(merged$Percent_change), ]
+      keep <- c("Percent_change")
+  merged <- merged[keep]
+  merged <- tibble::rownames_to_column(merged, "Var")
+  merged$Var = gsub("*.sum", "", merged$Var)
+  merged <- merged[order(-merged$Percent_change),]
+  merged$num <- 1:nrow(merged)
+  
+# Use dummy for grouped graphing
+
+  merged$dummy <- 1
+    merged$dummy <- ifelse (merged$num>10,2,merged$dummy)
+    merged$dummy <- ifelse (merged$num>20,3,merged$dummy)
+    merged$dummy <- ifelse (merged$num>30,4,merged$dummy)
+    merged$dummy <- ifelse (merged$num>40,5,merged$dummy)
+    merged$dummy <- ifelse (merged$num>50,6,merged$dummy)
+    merged$dummy <- ifelse (merged$num>60,7,merged$dummy)
+
+# Group and set up plots
+  pct_plot <-lapply(unique(merged$dummy), function(d) {
+  ggplot(merged %>% filter(dummy == d), aes(x = Var, y = Percent_change)) +
+  geom_bar(stat="identity", width = 0.5, fill = "#8da0cb") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_hline(yintercept = 0) +
+  labs(title = "NHTS 2001-2017 percent changes", subtitle = "Variables with no change omitted") +
+  xlab("Variable") + ylab("") +
+  scale_y_continuous(labels = percent)
+})
+
+pct_plot
+
+```
+
+```
 ### Estimation Comparison
 
 ```{r read_inputs, include=FALSE}
