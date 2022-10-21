@@ -6,13 +6,17 @@ knitr::opts_chunk$set(echo = TRUE, results='hide')
 
 ## Introduction
 
-This chapter describes the package build process for creating or modifying packages and their constituent modules within the VisionEval framework. The build process can be used to incorporate localized or custom data into VE by making a change to a module and then rebuilding it. This chapter includes a simple case study example of substituting the default households population data with a locally-specific US Census data Public Use Microdata Sample (PUMS) - which is a valuable way to get your VE model to reflect local conditions, and then rebuilding the package in VisionEval.
+This chapter describes the package build process for creating or modifying packages and their constituent modules within the VisionEval framework. The build process can be used to incorporate localized or custom data into VE by making a change to a module and then rebuilding it. 
 
-More detailed instructions are described below, but a summary of steps are:
+This chapter includes a simple case study example of substituting the default households population data with a locally-specific US Census data Public Use Microdata Sample (PUMS) - a valuable way to get your VE model to reflect local conditions - and then rebuilding the package in VisionEval.
+
+The material is organized to present methods that are applicable to the majority of VE users first. More advanced methods are presented later in this chapter for more advanced R users and model developers.
+
+The generalized approach to updating data within a VE package is set out below. Each of the steps has a detailed set of instructions  within this chapter. The summary of steps are:
 
 1.  Make sure you have a running VisionEval that you can start with RStudio.
 
-    -   Install R (ideally Version 4.1.2)
+    -   Install R (ideally Version 4.1.2).  *note: the VE team will try to keep the versions up to date with the latest software. However, sometimes due to testing compatibility with various packages, the R version for VE lags behind the most current version*
     -   Install RStudio and start it directly. Verify that it is using the R 4.1.2 version
     -   Download the VisionEval for R 4.1.3 Installer. Unzip it into a convenient directory (we'll call that the "VisionEval directory")
     -   Check that VisionEval starts by double-clicking VisionEval.Rproj in the VisionEval directory
@@ -52,7 +56,7 @@ R is a community-based project and depends upon a community of re-usable, reprod
 
 #### Why is this relevant?
 
-VisionEval relies on this fundamental package framework for inheriting code and data from its modules. Thus, in order to alter the data in a VisionEval module (i.e., an R Package) it must be repackaged, or re-built, using the new data. Otherwise, if only the source data is altered and not re-built, the VisionEval environment
+VisionEval relies on this fundamental package framework for inheriting code and data from its modules. Thus, in order to alter the data in a VisionEval module (i.e., an R Package) it must be repackaged, or re-built, using the new data. Otherwise, if only the source data is altered and not re-built, the VisionEval environment fails to recognize the updated data.
 
 #### VisionEval Environment vs Package Source
 
