@@ -6,21 +6,28 @@ This chapter introduces the option for users of VisionEval models to incorporate
 
 The approach for using synthetic data is different depending on whether you already have a synthetic population or VisionEval. 
 
-For users of existing synthetic data looking to setup a VisionEval model:
+1. For users of existing synthetic data looking to setup a VisionEval model:
 
-- This process requires the VisionEval is setup with an identical geography as the population data. 
+- This process requires the VisionEval is setup with an identical geography as the population data. Alert! - This may not be a trivial task.
 - The VisionEval model requires several inputs at specific geographic levels. 
 
-For users of an existing VisionEval model looking to use synthetic data:
+2. For users of an existing VisionEval model looking to use synthetic data (anticipated to be the more common scenario):
 
 - This process requires the synthetic data to adopt the same geographies as the VisionEval model.
 - The VisinEval model will already have all the data for the various geographies. The synthetic population will have be run with these specific geographies in order to consistently align the data.
 
-The scripts below focus on the second use case where there is an existing operational VisionEval model that will be amended to make use of a new synthetic population that will replace the existing synthetic household population process within VisionEval. The VisionEval model will have an updated module that will use pre-processed data and transform that data to work within the VisionEval specifications. 
+The process described below focuses on the second use case where there is an existing operational VisionEval model that will be amended to make use of a new synthetic population that will replace the existing synthetic household population process within VisionEval. The VisionEval model will have an updated module that will use pre-processed data and transform that data to work within the VisionEval datastore specifications. 
 
-This chapter will provide a tool to do the pre-processing as well provide the revised run scripts to run the new synthetic population VisionEval module.
+This chapter will provide a tool to do the pre-processing as well provide the revised run scripts to run the new synthetic population VisionEval module. This chapter uses a case study in how to design and use a Population Sim model to create a new synthetic population dataset but also include additional household characteristics that haven't been used before in the travel model. These additional characteristics of the household will allow for specific downstream queries to evaluate travel behavior across various household attributes (e.g., race, ethnicity, disability).
 
+The following describes the process summarized below:
 
+- Creating a third party synthetic population (using PopulationSim in this case study). The PopulationSim can be used to generate not only the required household descriptive fields that are used in VisionEval, but also other desired household characteristics that may be desirable for segment the population during reporting and querying the results.
+- Aligning the two models. Specifically the geography of the two models must have a cross-walk to match household characteristics. 
+- Third Party Data to VisionEval --> Populating the VisionEval datastore with the third party household and population data. This requires sensitivity to the variable specifications, units, etc. This is expected to be a separate script run as a pre-process to the VisionEval model.
+- Revised VisionEval run scripts to run the amended process that excludes the VisionEval SimHouseholds module.
+
+***Note (to be removed when Task 5 is complete) : Task 5.2 sets out the model design for this process. Task 5.3 is designing the working prototype for this process.***
 
 
 
