@@ -2,32 +2,37 @@
 
 ## Introduction
 
-This chapter introduces the option for users of VisionEval models to incorporate third-party synthetic population data produced by software tools. Examples being PopulationSim (https://activitysim.github.io/populationsim/#) and UrbanSim (https://urbansim.com/). The synthetic population is developed in the VESimHouseholds module within VisionEval. This module can be amended to use the third party data. The following sections describe the process for using this data. 
+This chapter introduces the option for users of VisionEval models to incorporate third-party synthetic population data produced by software tools. Examples being PopulationSim (https://activitysim.github.io/populationsim/#) and UrbanSim (https://urbansim.com/). This may be particularly valuable for users looking to create parity between population data inputs to VisionEval and existing activity-based models or other travel demand models. The synthetic population is developed in the VESimHouseholds module within VisionEval. This module can be amended to use the third party data. The following sections describe the process for using this data. 
 
 The approach for using synthetic data is different depending on whether you already have a synthetic population or VisionEval. 
 
-1. For users of existing synthetic data looking to setup a VisionEval model:
+1. **For users of existing synthetic data looking to setup a VisionEval model:**
 
-- This process requires the VisionEval is setup with an identical geography as the population data. Alert! - This may not be a trivial task.
-- The VisionEval model requires several inputs at specific geographic levels. 
+- This process requires the VisionEval is setup with an identical geography as the population data. ***Alert!*** - This may not be a trivial task, as the VisionEval model requires several inputs at specific geographic levels. 
 
-2. For users of an existing VisionEval model looking to use synthetic data (anticipated to be the more common scenario):
+2. **For users of an existing VisionEval model looking to use synthetic data (anticipated to be the more common scenario):**
 
 - This process requires the synthetic data to adopt the same geographies as the VisionEval model.
-- The VisinEval model will already have all the data for the various geographies. The synthetic population will have be run with these specific geographies in order to consistently align the data.
+- The VisionEval model will already have all the data for the various geographies. The synthetic population will have be run with these specific geographies in order to consistently align the data.
 
 The process described below focuses on the second use case where there is an existing operational VisionEval model that will be amended to make use of a new synthetic population that will replace the existing synthetic household population process within VisionEval. The VisionEval model will have an updated module that will use pre-processed data and transform that data to work within the VisionEval datastore specifications. 
 
-This chapter will provide a tool to do the pre-processing as well provide the revised run scripts to run the new synthetic population VisionEval module. This chapter uses a case study in how to design and use a Population Sim model to create a new synthetic population dataset but also include additional household characteristics that haven't been used before in the travel model. These additional characteristics of the household will allow for specific downstream queries to evaluate travel behavior across various household attributes (e.g., race, ethnicity, disability).
+This chapter will provide a tool to do the pre-processing as well provide the revised run scripts to run the new synthetic population VisionEval module. This chapter uses a case study in how to design and use a Population Sim model to create a new synthetic population dataset but also include additional household characteristics that haven't been used before in the travel model. These additional characteristics of the household will allow for specific downstream queries to evaluate travel behavior across various household attributes (e.g., race, ethnicity, disability); *note these additional household* *attributes do not influence the travel models directly, but rather are external variables against which travel behavior outcomes can be* *compared to.*
 
-The following describes the process summarized below:
+The remainder of this document following describes the process for using a PopulationSim synthetic population in VisionEval, summarized in the steps below: 
 
 - Creating a third party synthetic population (using PopulationSim in this case study). The PopulationSim can be used to generate not only the required household descriptive fields that are used in VisionEval, but also other desired household characteristics that may be desirable for segment the population during reporting and querying the results.
 - Aligning the two models. Specifically the geography of the two models must have a cross-walk to match household characteristics. 
 - Third Party Data to VisionEval --> Populating the VisionEval datastore with the third party household and population data. This requires sensitivity to the variable specifications, units, etc. This is expected to be a separate script run as a pre-process to the VisionEval model.
-- Revised VisionEval run scripts to run the amended process that excludes the VisionEval SimHouseholds module.
+- Revising VisionEval run scripts to run the amended process that excludes the VisionEval SimHouseholds module.
 
-***Note (to be removed when Task 5 is complete) : Task 5.2 sets out the model design for this process. Task 5.3 is designing the working prototype for this process.***
+***Note (to be removed when Task 5 is complete) : Task 5.2 sets out the model design for this process. Task 5.3 is designing the working prototype for this process. All references to Tasks, or 5.2 and 5.3 will be removed. **
+
+**This chapter will revised as part of Task 5.3 when the PopSim case study and prototype have been completed.**
+
+*****
+
+
 
 
 
@@ -35,9 +40,9 @@ The following describes the process summarized below:
 
 This documentation describes the VESimHouseholds package. The purpose is to orient users to the mechanics of the VESimHouseholds package and thoroughly describe its inputs and outputs so that users can implement the package using customizable local data.
 
-One of the basic components of VisionEval is the household population being modeled. This population contains key demographic attributes for transportation modeling, such as age, income, employment, and household composition (i.e., the types of persons in each household). A common challenge in transportation modeling is high-dimensional data. As variables are added, the database grows exponentially. Since VisionEval is intended to be lightweight, it only includes a minimum of demographic features associated with key travel behavior parameters. However, it is important to empower users to incorporate additional variables specific to their needs.
+One of the basic components of VisionEval is the household population being modeled. This population contains key demographic attributes for transportation modeling, such as age, income, employment, and household composition (i.e., the types of persons in each household). A common challenge in transportation modeling is high-dimensional data. As variables are added, the database grows exponentially. Since VisionEval is intended to be lightweight, it only includes a minimum of demographic features associated with key travel behavior parameters. However, it is important to empower users to incorporate additional variables specific to their needs. As such, this documentation also describes the development of a new package, VEPopulationSim, that can utilize an externally-synthesized PopulationSim population instead of relying on the default VESimHouseholds package. *A prototype of* *VEPopulationSim* *will be developed in Task 5.3.* 
 
-This guide is divided into two main sections:
+This guide is divided into two main sections, one describing VisionEval’s current population synthesis process, and the other describing PopulationSim and use of PopulationSim in VEPopulationSim: 
 
 1. **VESimHouseholds** package inputs, mechanics, and outputs are described. Within this section is a description of the individual modules used in the package and their contribution to the [final household population data](#VESimHouseholds-output). The specific modules are:
    - [CreateEstimationDatasets](#CreateEstimationDatasets)
@@ -46,7 +51,7 @@ This guide is divided into two main sections:
    - [AssignLifeCycle](AssignLifeCycle)
    - [PredictIncome](#PredictIncome)
 
-2. [**PopulationSim**](#PopulationSim) inputs, mechanics, and outputs are described for use as a third-party population synthesizer.
+2. [**PopulationSim**](#PopulationSim) inputs, mechanics, and outputs are described for use as a third-party population synthesizer. The VEPopulationSim package, built to host the module that converts the output from PopulationSim synthesizer into a VisionEval dataset, is also described. *This package will be described in greater detail in Task 5.3.* 
 
 **Note**: It is important to clarify that population data and household characteristics appended to the population are for post-processing analysis, and do not introduce changes to travel behavior models. Additionally, the conversion tool from external population synthesis <u>to be developed</u> will not forecast shifts in demographic characteristics (aside from age, income, employment status).
 
