@@ -10,7 +10,7 @@ This chapter describes the build process for VisionEval. The VisionEval "build p
 
 ### What is an R "package"?
 
-R is a community-based project and depends upon a community of re-usable, reproducible, and shareable code. To facilitate this, R uses a standardized method for bundling a collection of code and data into a built into a shareable binary "package". Packages can then be downloaded and installed into your local R environment.
+R is a community-based project and depends upon a community of re-usable, reproducible, and shareable code. To facilitate this, R uses a standardized method for bundling a collection of code and data into a built shareable binary "package". Packages can then be downloaded and installed into your local R environment.
 
 ### Why is this relevant?
 
@@ -242,12 +242,12 @@ To begin, the code snippets below conduct a brief exploratory analysis to demons
     # Additional packages
     library(ggplot2)
     library(reshape)
-
+    
     # Load data, uncomment it to run in your project
     hh_powertrain_prop <- read.csv('.YOUR_PACKAGE_DIRECTORY/inst/extdata/hh_powertrain_prop.csv')
-
+    
     melted_powertrains <- reshape::melt(hh_powertrain_prop, id.vars = 'ModelYear')
-
+    
     ggplot(data = melted_powertrains) +
       geom_line(aes(x=ModelYear, y=value, color=variable)) +
       scale_y_continuous(labels=scales::percent) +
@@ -267,37 +267,37 @@ $$ We then create a wrapper function that adjusts each of the alternative powert
     adjust_powertrain <- function(powertrain_df, start_year) {
       # Define our adjustment functions
       adj_fun <- function(xv) xv + (xv^2) * (1 - xv)
-
+    
       # Which columns to modify
       cols <- colnames(powertrain_df)
       ev_cols <- cols[grepl('Hev|Phev|Bev', cols)]
       ice_cols <- cols[grepl('Icev', cols)]
-
+    
       # Create the modified data frame
       df_mod <- powertrain_df
       yrs_idx <- df_mod$ModelYear > start_year
-
+    
       # Adjust the alternate powertrain data (BEV, PHEV, HEV) data
       df_mod[yrs_idx, ev_cols] <- apply(powertrain_df[yrs_idx, ev_cols], 2, adj_fun)
-
+    
       # Subtract the amount of remaining internal combustion engines (ICE)
       for(x in ice_cols){
         sum_cols <- ev_cols[grepl(gsub('Icev', '', x), ev_cols)]
         df_mod[yrs_idx, eval(x)] <- 1 - rowSums(df_mod[yrs_idx, sum_cols])
       }
-
+    
       return(df_mod)
     }
 
 The adjusted inputs can be combined with the existing data. The combined plot shows an noticeable increase in alternative powertrain vehicle shares for later vintage years.
 
     hh_powertrain_prop_high <- adjust_powertrain(hh_powertrain_prop, 2025)
-
+    
     melted_powertrains <- rbind(
       cbind(reshape::melt(hh_powertrain_prop, id.vars = 'ModelYear'), type='existing'),
       cbind(reshape::melt(hh_powertrain_prop_high, id.vars = 'ModelYear'), type='high')
       )
-
+    
     ggplot(data = melted_powertrains) +
       geom_line(aes(x=ModelYear, y=value, color=variable, linetype=type)) +
       scale_y_continuous(labels=scales::percent) +
@@ -374,35 +374,35 @@ Once a model user is satisfied with the effects that are represented by applying
     if (length(Msg_) != 0) {
       stop(paste(Msg_, collapse = ", "))
     }
-
+    
     #>>>>>>>>> NEW FUNCTION BEGINS
     adjust_powertrain <- function(powertrain_df, start_year) {
       # Define our adjustment functions
       adj_fun <- function(xv) xv + (xv^2) * (1 - xv)
-
+    
       # Which columns to modify
       cols <- colnames(powertrain_df)
       ev_cols <- cols[grepl('Hev|Phev|Bev', cols)]
       ice_cols <- cols[grepl('Icev', cols)]
-
+    
       # Create the modified data frame
       df_mod <- powertrain_df
       yrs_idx <- df_mod$ModelYear > start_year
-
+    
       # Adjust the alternate powertrain data (BEV, PHEV, HEV) data
       df_mod[yrs_idx, ev_cols] <- apply(powertrain_df[yrs_idx, ev_cols], 2, adj_fun)
-
+    
       # Subtract the amount of remaining internal combustion engines (ICE)
       for(x in ice_cols){
         sum_cols <- ev_cols[grepl(gsub('Icev', '', x), ev_cols)]
         df_mod[yrs_idx, eval(x)] <- 1 - rowSums(df_mod[yrs_idx, sum_cols])
       }
-
+    
       return(df_mod)
     }
-
+    
     #<<<<<<<<< END OF NEW FUNCTION
-
+    
     #Add to PowertrainFuelDefaults_ls and clean up
     PowertrainFuelDefaults_ls$HhPowertrain_df <- HhPowertrain_df
     rm(Inp_ls, HhPowertrain_df)
