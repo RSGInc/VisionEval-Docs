@@ -17,7 +17,7 @@ The approach for using synthetic data is different depending on whether you alre
 
 The process described below focuses on the second use case where there is an existing operational VisionEval model that will be amended to make use of a new synthetic population that will replace the existing synthetic household population process within VisionEval. The VisionEval model will have an updated module that will use pre-processed data and transform that data to work within the VisionEval datastore specifications. 
 
-This chapter will provide a tool to do the pre-processing as well provide the revised run scripts to run the new synthetic population VisionEval module. This chapter uses a case study in how to design and use a Population Sim model to create a new synthetic population dataset but also include additional household characteristics that haven't been used before in the travel model. These additional characteristics of the household will allow for specific downstream queries to evaluate travel behavior across various household attributes (e.g., race, ethnicity, disability); *note these additional household* *attributes do not influence the travel models directly, but rather are external variables against which travel behavior outcomes can be* *compared to.*
+This chapter will provide a tool to do the pre-processing as well provide the revised run scripts to run the new synthetic population VisionEval module. This chapter uses a case study in how to design and use a Population Sim model to create a new synthetic population dataset but also include additional household characteristics that haven't been used before in the travel model. These additional characteristics of the household will allow for specific downstream queries to evaluate travel behavior across various household attributes (e.g., race, ethnicity, disability); *note these additional household* *attributes do not influence the travel models directly, but rather are external variables against which travel behavior outcomes can be* *compared to.* The use of PopulationSim is essential to ensure that control totals for these households are held to the same overarching control totals and statistical representation of the true population being modeled.
 
 The remainder of this document following describes the process for using a PopulationSim synthetic population in VisionEval, summarized in the steps below: 
 
@@ -40,7 +40,9 @@ The remainder of this document following describes the process for using a Popul
 
 This documentation describes the VESimHouseholds package. The purpose is to orient users to the mechanics of the VESimHouseholds package and thoroughly describe its inputs and outputs so that users can implement the package using customizable local data.
 
-One of the basic components of VisionEval is the household population being modeled. This population contains key demographic attributes for transportation modeling, such as age, income, employment, and household composition (i.e., the types of persons in each household). A common challenge in transportation modeling is high-dimensional data. As variables are added, the database grows exponentially. Since VisionEval is intended to be lightweight, it only includes a minimum of demographic features associated with key travel behavior parameters. However, it is important to empower users to incorporate additional variables specific to their needs. As such, this documentation also describes the development of a new package, VEPopulationSim, that can utilize an externally-synthesized PopulationSim population instead of relying on the default VESimHouseholds package. *A prototype of* *VEPopulationSim* *will be developed in Task 5.3.* 
+One of the basic components of VisionEval is the household population being modeled. This population contains key demographic attributes for transportation modeling, such as age, income, employment, and household composition (i.e., the types of persons in each household). A common challenge in transportation modeling is high-dimensional data. As a synthetic population it is important to remain valid with the control totals for each dimensions and within statistical validity of the true population.
+
+Since VisionEval is intended to be lightweight, it only includes a minimum of demographic features associated with key travel behavior parameters. However, it is important to empower users to incorporate additional variables specific to their needs. As such, this documentation also describes the development of a new package, VEPopulationSim, that can utilize an externally-synthesized PopulationSim population instead of relying on the default VESimHouseholds package. *A prototype of* *VEPopulationSim* *will be developed in Task 5.3.* 
 
 This guide is divided into two main sections, one describing VisionEval’s current population synthesis process, and the other describing PopulationSim and use of PopulationSim in VEPopulationSim: 
 
@@ -53,37 +55,36 @@ This guide is divided into two main sections, one describing VisionEval’s curr
 
 2. [**PopulationSim**](#PopulationSim) inputs, mechanics, and outputs are described for use as a third-party population synthesizer. The VEPopulationSim package, built to host the module that converts the output from PopulationSim synthesizer into a VisionEval dataset, is also described. *This package will be described in greater detail in Task 5.3.* 
 
-**Note**: It is important to clarify that population data and household characteristics appended to the population are for post-processing analysis, and do not introduce changes to travel behavior models. Additionally, the conversion tool from external population synthesis <u>to be developed</u> will not forecast shifts in demographic characteristics (aside from age, income, employment status).
+**Note**: It is important to clarify that population data and household characteristics appended to the population are for post-processing analysis, and do not introduce changes to travel behavior models.
 
 ## A Primer on Population Synthesis
 Population synthesis is essentially the process of expanding by replication a small disaggregated data sample (i.e., one record per household), called "seed data", to match aggregated total population counts. The challenge is that the sample data is almost never a perfectly proportional sample. When the sample data is expanded to match one variable, it typically will cause the other variables to become poorly fit. To mitigate this, population synthesis iteratively fits each variable until the total error is minimized. An additional challenge in population synthesis is in handling multilevel data with both individual persons and households that contain persons. Matching all target total counts with that many degrees of freedom can be difficult and computationally intensive.
 
 ## VESimHouseholds Package
-The VESimHouseholds package contains five primary modules:
+The VESimHouseholds package contains five R code files, consisting of a data preparation step that is invoked when the package is built, and four modules used to synthesize households during a VisionEval model run:
 
-1. **CreateEstimationDatasets.R** - Formats Public Use Microdata Sample (PUMS) data from comma separate values (CSV) file into the datastore
-2. **CreateHouseholds.R** - Synthesizes the base household population data by age group
-3. **PredictWorkers.R** - Estimates the number of workers in each household by age group
-4. **AssignLifeCycle.R** - Assigns household life cycle variable (LIF_CYC) as defined by 2009 NHTS
-5. **PredictIncome.R** - Estimates the household income for each household
+1. **CreateEstimationDatasets.R** - Used during the package build, this set of code formats Public Use Microdata Sample (PUMS) data from comma separate values (CSV) file into a format suitable for use in estimating the population synthesis models and performing population synthesis.
+2. **CreateHouseholds.R** - Module to synthesize the base household population data by age group
+3. **PredictWorkers.R** - Module to estimate the number of workers in each household by age group
+4. **AssignLifeCycle.R** - Module to assign household life cycle variable (LIF_CYC) as defined by 2009 NHTS
+5. **PredictIncome.R** - Module to estimate the household income for each household
 
-These individual modules are run sequentially, starting with CreateHouseholds, each adding relevant information to the household population datastore. Some modules have pre-requisite dependencies, such as the AssignLifeCycle module, which requires the number of household workers to be assigned before it can be run in order to determine retired persons. Below is a general summary table of inputs and outputs for each model  An external population synthesizer should be able to match these output formats.
+These individual modules are run sequentially at the beginning of a VisionEval model run, starting with CreateHouseholds, to add relevant information to the household population datastore. The modules need to be run in order, as they have pre-requisite dependencies, such as the AssignLifeCycle module, which requires the number of household workers to be assigned before it can be run in order to determine retired persons. Below is a general summary table of inputs and outputs for each of the R files. An external population synthesizer needs to generate compatible module outputs. 
 
-| Module                   | Input files | Output to Datastore | Output to Package Data |
+| R File              | Input files | Output to Datastore During Model Run | Output to Package Data During Package Build |
 | ------------------------ | ----------- | ----------------------- | -- |
-| CreateEstimationDatasets | VESimHouseholds/inst/extdata/pums_household.csv<br>VESimHouseholds/inst/extdata/pums_persons.csv | | Hh_df |
+| CreateEstimationDatasets | VESimHouseholds/inst/extdata/pums_household.csv<br>VESimHouseholds/inst/extdata/pums_persons.csv | Only during build | Hh_df |
 | CreateHouseholds         | your_model/inputs/azone_hh_pop_by_age.csv<br>your_model/inputs/azone_hhsize_targets.csv<br>your_model/inputs/azone_gq_pop_by_age.csv | Azone Marea Age0to14 Age15to19 Age20to29 Age30to54 Age55to64 Age65Plus HhSize HhType NumHh NumGq HhId | HtProb_HtAp  <br> PropHhWkr_HtAg |
 | PredictWorkers           | your_model/inputs/azone_relative_employment.csv   | Wkr15to19 Wkr20to29 Wkr30to54 Wkr55to64 Wkr65Plus Workers NumWkr    |  |
 | AssignLifeCycle          | None | LifeCycle   |  |
 | PredictIncome            | your_model/inputs/azone_per_cap_inc.csv  | Income  |  |
 
-
-With the exception of CreateEstimationDatasets.R, all modules save the resulting data as a .Rda file in the model directory's Datastore. The CreateEstimationDatasets converts default microdata (e.g., PUMS) into an R dataframe for use as seed data. Any data that is stored within the package and not your model will need to have the estimation scripts run to generate the data and re-built and installed into the VisionEval runtime library, see the [Module Build Process](#ve-buildprocess) for more details.
+If the seed data from PUMS is changed in the packages inst/extdata folder, the package will need to be rebuilt. See the [Module Build Process](#ve-buildprocess) for more details.
 
 The following subsections are taken from the module documentation and describe how each module functions in more detail individually.
 
 ### CreateEstimationDatasets Module {#CreateEstimationDatasets}
-This module does not model anything per se, but instead reads in the default PUMS data and converts it to an R dataframe and stores it in the VESimHouseholds package data folder. These data in the Hh_df dataframe become the base seed data from which the household populations are synthesized. To change the source (use local data rather than the default data) of the PUMS seed data, see the [Module Build Process](#ve-buildprocess) for more details.
+This file, processed when the package is build, reads in the default PUMS data and converts it to an R dataframe and stores it in the VESimHouseholds package data folder. These data in the Hh_df dataframe become the base seed data from which the household populations are synthesized during a model run. To change the PUMS seed data to correspond to the local region, see the [Module Build Process](#ve-buildprocess) for more details.
 
 #### User Inputs
 This module reads in the two microdata sample files based on PUMS data:
@@ -91,7 +92,7 @@ This module reads in the two microdata sample files based on PUMS data:
 - `VESimHouseholds/inst/extdata/pums_household.csv`
 - `VESimHouseholds/inst/extdata/pums_persons.csv`
 
-#### Datasets Produced by the Module
+#### Output from this R Code
 
 The CreateEstimationDatasets will store an R dataframe in the package, an example of this dataframe is shown below:
 
@@ -115,7 +116,7 @@ The field value data types are as follows:
 - HhWeight - Integer
 - HhType - Character (Reg = Regular, gq = group quarters)
 
-**Note**: The HhType field in this table is **NOT** the same as HhType in subsequent modules.
+**Note**: The HhType field in this table is **NOT** the same as HhType that is placed in the Datastore and used in subsequent modules.
 
 ### CreateHouseholds Module
 
@@ -168,11 +169,11 @@ An example household age group probability matrix might look like:
 | Sum Product | 275.34   | 863.80    | 447.50    | 212.76    | 55.26     | 20.91     |          |
 | Target Total| 285      | 853       | 452       | 217       | 58        | 23        | 3330     |
 
-It then carries out the following interative process to create a set of households that is internally consistent and that matches (approximately) the optional inputs for household size and proportion of single-person households:
+It then carries out the following iterative process to create a set of households that is internally consistent and that matches (approximately) the optional inputs for household size and proportion of single-person households:
 
 1. For each household type, the number of households of the type is iteratively fitted to match the target totals for each age group. For example if 420 persons age 0-14 and 480 persons age 20-29 are assigned to household type *2-0-2-0-0-0*, that implies either 210 or 240 households of that type. Where the number of households of the type implied by the persons assigned is not consistent as in this example, the mean of the implied number of households is used. In the example, this would be 225 households. This is the *resolved* number of households. For all household types, the resolved number of households is compared to the maximum number of implied households (in this case 225 is compared to 240) if the ratio of these values differs from 1 in absolute terms by less than 0.001 for all household types, the iterative process ends.
 
-2. If a household size target has been specified, the average household size for the resolved households is computed. The ratio of the target household size and the average household size for the resolved households is computed. The number of resolved households in household types having sizes greater than the target household size is multiplied by this ratio. For example, if target household size is 2.5 and average household size for the resolved households is 3, th number of household for household types having more than 2.5 persons (i.e. 3 or more persons) would be multiplied by *2.5 / 3*.
+2. If a household size target has been specified, the average household size for the resolved households is computed. The ratio of the target household size and the average household size for the resolved households is computed. The number of resolved households in household types having sizes greater than the target household size is multiplied by this ratio. For example, if target household size is 2.5 and average household size for the resolved households is 3, the number of household for household types having more than 2.5 persons (e.g., 3 or more persons) would be multiplied by *2.5 / 3*.
 
 3. If a target for the proportion of households that are 1-person households is set, the difference between the number of 1-person households that there should be and the number that have been assigned is calculated. That difference is added across all 1-person household types (e.g. if the difference is 100, since there are 5 1-person household types, 20 is added to each of those types). The difference is substracted across all other household types.
 
@@ -244,7 +245,7 @@ The following table documents each dataset that is *retrieved* from the datastor
 
 - **NAME** - The dataset name.
 - **TABLE** - The table in the datastore that the data is retrieved from.
-- **GROUP** - The group in the datastore where the table is located. Note that the datastore has a group named 'Global' and groups for every model run year. For example, if the model run years are 2010 and 2050, then the datastore will have a group named '2010' and a group named '2050'. If the value for 'GROUP' is 'Year', then the dataset will exist in each model run year group. If the value for 'GROUP' is 'BaseYear' then the dataset will only exist in the base year group (e.g. '2010'). If the value for 'GROUP' is 'Global' then the dataset will only exist in the 'Global' group.
+- **GROUP** - The group in the datastore where the table is located. Note that the datastore has a group named 'Global' and groups for every model run year. For example, if the model run years are 2010 and 2050, then the datastore will have a group named '2010' and a group named '2050'. If the value for 'GROUP' is 'Year', then the dataset will exist in each model run year group. If the value for 'GROUP' is 'BaseYear' then the dataset will only exist in the base year group (e.g., '2010'). If the value for 'GROUP' is 'Global' then the dataset will only exist in the 'Global' group.
 - **TYPE** - The data type. The framework uses the type to check units and inputs. Refer to the model system design and users guide for information on allowed types.
 - **UNITS** - The units that input values need to represent. Some data types have defined units that are represented as abbreviations or combinations of abbreviations. For example 'MI/HR' means miles per hour. Many of these abbreviations are self evident, but the VisionEval model system design and users guide should be consulted.
 - **PROHIBIT** - Values that are prohibited. Values in the datastore do not meet any of the listed conditions.
@@ -408,7 +409,7 @@ This module assigns a "life cycle" category to each household, which defines eac
 | 10   | 2+ adults, retired, no children |
 
 
-The life cycle categories are similar, but not the same as, those established for the NHTS. The age categories used in VisionEval models are broader than those used by the NHTS to identify children of different ages. As a result it is not possible for the life cycle designations to reflect child ages as they do in the NHTS. Also, adulthood is determined differently in this module. The NHTS uses age 21 as the threshold age for adulthood. This module uses use 20 as nominal age break for adulthood (the 20-29 age group). Moreover, the module identifies some younger persons to be adults in situations where they are likely to be be living independently as adults or emancipated minors. Persons in the 15 to 19 age group are considered adults when there are no older adults (ages 30+) in the household.
+The life cycle categories are similar, but not the same as, those established for the NHTS. The age categories used in VisionEval models are broader than those used by the NHTS to identify children of different ages. As a result it is not possible for the life cycle designations to reflect child ages as they do in the NHTS. Also, adulthood is determined differently in this module. The NHTS uses age 21 as the threshold age for adulthood. This module uses use 20 as nominal age break for adulthood (the 20-29 age group). Moreover, the module identifies some younger persons to be adults in situations where they are likely to be living independently as adults or emancipated minors. Persons in the 15 to 19 age group are considered adults when there are no older adults (ages 30+) in the household.
 
 #### Model Parameter Estimation
 
@@ -430,7 +431,7 @@ The following table documents each dataset that is retrieved from the datastore 
 
 - **NAME** - The dataset name.
 - **TABLE** - The table in the datastore that the data is retrieved from.
-- **GROUP** - The group in the datastore where the table is located. Note that the datastore has a group named 'Global' and groups for every model run year. For example, if the model run years are 2010 and 2050, then the datastore will have a group named '2010' and a group named '2050'. If the value for 'GROUP' is 'Year', then the dataset will exist in each model run year group. If the value for 'GROUP' is 'BaseYear' then the dataset will only exist in the base year group (e.g. '2010'). If the value for 'GROUP' is 'Global' then the dataset will only exist in the 'Global' group.
+- **GROUP** - The group in the datastore where the table is located. Note that the datastore has a group named 'Global' and groups for every model run year. For example, if the model run years are 2010 and 2050, then the datastore will have a group named '2010' and a group named '2050'. If the value for 'GROUP' is 'Year', then the dataset will exist in each model run year group. If the value for 'GROUP' is 'BaseYear' then the dataset will only exist in the base year group (e.g., '2010'). If the value for 'GROUP' is 'Global' then the dataset will only exist in the 'Global' group.
 - **TYPE** - The data type. The framework uses the type to check units and inputs. Refer to the model system design and users guide for information on allowed types.
 - **UNITS** - The units that input values need to represent. Some data types have defined units that are represented as abbreviations or combinations of abbreviations. For example 'MI/HR' means miles per hour. Many of these abbreviations are self evident, but the VisionEval model system design and users guide should be consulted.
 - **PROHIBIT** - Values that are prohibited. Values in the datastore do not meet any of the listed conditions.
@@ -587,7 +588,7 @@ The following table documents each dataset that is retrieved from the datastore 
 
 - **NAME** - The dataset name.
 - **TABLE** - The table in the datastore that the data is retrieved from.
-- **GROUP** - The group in the datastore where the table is located. Note that the datastore has a group named 'Global' and groups for every model run year. For example, if the model run years are 2010 and 2050, then the datastore will have a group named '2010' and a group named '2050'. If the value for 'GROUP' is 'Year', then the dataset will exist in each model run year group. If the value for 'GROUP' is 'BaseYear' then the dataset will only exist in the base year group (e.g. '2010'). If the value for 'GROUP' is 'Global' then the dataset will only exist in the 'Global' group.
+- **GROUP** - The group in the datastore where the table is located. Note that the datastore has a group named 'Global' and groups for every model run year. For example, if the model run years are 2010 and 2050, then the datastore will have a group named '2010' and a group named '2050'. If the value for 'GROUP' is 'Year', then the dataset will exist in each model run year group. If the value for 'GROUP' is 'BaseYear' then the dataset will only exist in the base year group (e.g., '2010'). If the value for 'GROUP' is 'Global' then the dataset will only exist in the 'Global' group.
 - **TYPE** - The data type. The framework uses the type to check units and inputs. Refer to the model system design and users guide for information on allowed types.
 - **UNITS** - The units that input values need to represent. Some data types have defined units that are represented as abbreviations or combinations of abbreviations. For example 'MI/HR' means miles per hour. Many of these abbreviations are self evident, but the VisionEval model system design and users guide should be consulted.
 - **PROHIBIT** - Values that are prohibited. Values in the datastore do not meet any of the listed conditions.
@@ -623,7 +624,7 @@ The following table documents each dataset that is placed in the datastore by th
 
 
 ### Datasets Produced by VESimHouseholds {#VESimHouseholds-output}
-The following table documents the overall dataset that is placed in the datastore by the VESimHouseholds package. Each row in the table describes a dataset. The table names and their meanings are as follows:
+The following table documents the data columns that are placed in the datastore after running the four modules in the VESimHouseholds package. Each row in the table describes a dataset. The table names and their meanings are as follows:
 
 
 | NAME      | TABLE     | GROUP | TYPE      | DESCRIPTION                                                                  |
@@ -705,20 +706,20 @@ remaining modules within a VE model run have access to the necessary attributes 
 
 ## VEPopulationSim {#VEPopulationSim}
 
-The VEPopulationSim package is built to host the module that converts the output from
-PopulationSim synthesizer into a VisionEval dataset. It also contains several ancillary
+The VEPopulationSim package contains amodule that converts the output from a separate 
+PopulationSim synthesizer run into a VisionEval dataset. It also contains several ancillary
 scripts that can assist a user in preparing inputs to the PopulationSim synthesizer
 and customize the module to read a range of outputs produced by the synthesizer based
 on user specified settings.
 
-Note: it is essential that the user has a complete PopulationSim output dataset ready to inform VE before proceeding.
+***Note:*** it is essential that the user has a complete PopulationSim output dataset ready to inform VE before proceeding and both the models share a common geography
 
 ### Data preparation for PopulationSim synthesizer
 The package includes the script `inst/automated_dataprep.R` that prepares the inputs to
 PopulationSim synthesizer. The script requires following inputs:
 
 #### Inputs
-1. Settings (`inst/datapep_settings.R`) - The settings are used to specify file names
+1. Settings (`inst/dataprep_settings.R`) - The settings are used to specify file names
 that are input to the script.
 
 ```R
@@ -796,9 +797,7 @@ to update the variables that need to be pulled from the census data which can be
 
 
 ## ReadPopulationSimOutput {#ReadPopulationSimOutput}
-The ReadPopulationSimOutput module developed within the VEPopulationSim package
-built specifically to convert the synthetic households and population, as produced by [PopulationSim](#PopulationSim) 
-into VisionEval households. The module and the package are developed using the guidlines provided in the [Developer Documentation](https://rsginc.github.io/VisionEval-Docs/developer.html). There are two key components to this module:
+The ReadPopulationSimOutput module within the VEPopulationSim package will convert the synthetic households and population produced by [PopulationSim](#PopulationSim) into VisionEval households and load them into the datastore. The module and the package are developed using the guidelines provided in the [Developer Documentation](https://rsginc.github.io/VisionEval-Docs/developer.html). There are two key components to this module:
 
 - **Specification**:
 The module specification is used to specify the level of geography that the module is run at and different data
@@ -865,7 +864,7 @@ using the `inst/create_specification.R` within the VEPopulationSim package. Ther
 | Race      | Person    | Year  | integer    | category | -1      | c("NA", "< 0")      | c(1:9)      | Coded race of a person (PUMS 2020 definition)                |
 
 - **Main function**:
-The core function of the ReadPopulationSimOutput module is defined in ve_read_popsim_output_function.R and 
+The ReadPopulationSimOutput module is defined in ve_read_popsim_output_function.R and 
 it describes the relations between the PopulationSim output and VisionEval dataset.
 
 ```R
@@ -1022,12 +1021,13 @@ model as an example. The current version of the model only calls two modules
 namely ReadPopulationSim from VEPopulationSim package and AssignLifeCycle from
 VESimHouseholds package.
 
-## Using the VEPopulationSim
+## Using VEPopulationSim
 
-### Updating the VEPopulationSim
+### Updating VEPopulationSim
 
-The steps outlined below assumes that the PopulationSim synthesizer has
-successfully produced synthetic household and population file.
+The steps outlined below assumes that the user has access to a PopulationSim setup and the necessary output files (i.e., synthetic households and population within that setup). Some of these steps include editing R scripts (which can be done using any text editor) and others include editing spreadsheets.
+
+***NOTE***: Task 5.3 will focus on coalescing these into one spreadsheet style input file, more typical with other VE inputs, that will be easier for the users to update. 
 
 * Update the `inst/create_ReadPopulationSimOutput.R` script with PopulationSim
 specific paths ans the year for whicht the output was produced. Here's a 
@@ -1049,19 +1049,19 @@ setnames(syn_pop_dt, "PINCADJ", paste0("PINCADJ.", Year))       # Update the lab
 ```
 
 * Update the PopulationSim_DataDictionary.csv file with all the attributes output in
-the synthetic_households.csv and synthetic_persons.csv file. Users should follow the guildelines for 
-`Inp` component of [Module Specification](https://rsginc.github.io/VisionEval-Docs/ve-estimation.html?q=specifi#module-specifications) when updating or entering new records in the file.
+the synthetic_households.csv and synthetic_persons.csv file. Users should follow the guidelines for 
+`Inp` component of [Module Specification](https://rsginc.github.io/VisionEval-Docs/ve-estimation.html?q=specifi#module-specifications) when updating or entering new records in the file. Users should not delete any existing attributes that came with the example setup as these attributes are necessary for the VisionEvall models to run successfully.
 
 * Update the VESimHousehold_DataDictionary.csv file with all the attributes that are needed to produce the same output
-VESimHousehold package produces and any additional attributes that need to be retrieved from the synthesized households and persons file. Users should follow the guildelines for `Set` component of [Module Specification](https://rsginc.github.io/VisionEval-Docs/ve-estimation.html?q=specifi#module-specifications) when updating or entering new records in the file.
+VESimHousehold package produces and any additional attributes that need to be retrieved from the synthesized households and persons file. Users should follow the guidelines for `Set` component of [Module Specification](https://rsginc.github.io/VisionEval-Docs/ve-estimation.html?q=specifi#module-specifications) when updating or entering new records in the file. The attributes listed in this spreadsheet should not be altered as these are required to successfully run a VisionEval model.
 
-* Update the ve_read_popsim_output_function.R script by updating/defining the relations between the PopulationSim output and VisionEval dataset. Users should follow the guidelines outlined in [Module Function](https://rsginc.github.io/VisionEval-Docs/ve-estimation.html?q=specifi#module-function) to update the function.
+* Update the ve_read_popsim_output_function.R script by updating/defining the relations between the PopulationSim output and VisionEval dataset. Users should follow the guidelines outlined in [Module Function](https://rsginc.github.io/VisionEval-Docs/ve-estimation.html?q=specifi#module-function) to update the function. The objective of this function is to transform synthetic households and persons attributes to VisionEval households and persons attributes.
 
 ## Running the model with VEPopulationSim package
 
-To run the model with VEPopulationSim package it is assumed that the users have generated synthetic households and persons file by running the PopulationSim synthesizer and have all the VEModel spatial inputs (bzone or azone) in a format that is spatially consistent with the geography used with the PopulationSim synthesizer. 
+To run the model with VEPopulationSim package it is assumed that the users have generated synthetic households and persons file by running the PopulationSim synthesizer and have all the VEModel spatial inputs (bzone or azone) in a format that is spatially consistent with the geography used with the PopulationSim synthesizer. If an user has an existing PopulationSim setup they want to use with this package then additional manual verification steps need to be taken to ensure that the VEModel geography (bzone or azone) aligns with PopulationSim geographies. Additional guidance on this and some helpful tools will be provided in Task 5.3.
 
-[ this process could use greater development around confirming geographies and what if different, etc. in next task ]
+*[ this process could use greater development around confirming geographies and what if different, etc. in next task ]*
 
 
 
