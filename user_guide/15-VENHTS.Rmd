@@ -340,7 +340,7 @@ Below is a summary of build results if `HOMETYPE` is missing.
 
 To provide an overview of NHTS 2001 to 2017 results, below are comparative user_guide/_bookdown_files/15-VENHTS_files/figure-html for each data column between data sets. As expected, most variables do differ between the 2001 and the 2017 data. These are a result of absolute changes in investment in infrastructure and changes in the location and characteristics of the US population. The green color represents the 2017 data while the blue shows the 2001 data.
 
-![](_bookdown_files/15-VENHTS_files/figure-html/figure-html-1.png)
+![](images\figure-html-1.png)
 ![](_bookdown_files/15-VENHTS_files/figure-html-2.png)
 ![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/hh_user_guide/_bookdown_files/15-VENHTS_files/figure-html-3.png)
 ![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/hh_user_guide/_bookdown_files/15-VENHTS_files/figure-html-4.png)
