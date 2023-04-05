@@ -33,7 +33,7 @@ This work builds on some past efforts to explore updates to individual VE module
 
 The NHTS is the major estimation dataset used in the models that comprise VE. Therefore, updating the version of the NHTS or considering replacing the NHTS with an alternative household travel survey dataset is an extremely significant change to the model framework with the potential to change the results from many of the modules in the VE system. Given the number of models estimated using the NHTS, it is difficult to predict the effects of updating the dataset.
 
-The discussion in this document highlights difficulties found in replacing the 2001 NHTS data with an ostensibly very similar dataset, the 2017 NHTS. Once straightforward changes between the two datasets had been dealt with, including some renaming and recoding of variables, there were more important changes to the NHTS that caused estimation problems. This included the lack of a home type variable, that describes the type of structure (e.g., single family home) that the household lives in and that had been used as an explanatory variable in models in the framework. While this was dealt with in this effort by imputing values for home type based on the relationship between home type and other household variables observed in the survey. a more supportable approach would be to re=specify the models that used that variable. If a user were to attempt to replace the NHTS data with other locally collected household travel survey data, it is likely that the number of missing variables would be higher than one and that additional models would require re-specification.
+The discussion in this document highlights difficulties found in replacing the 2001 NHTS data with an ostensibly very similar dataset, the 2017 NHTS. Once straightforward changes between the two datasets had been dealt with, including some renaming and recoding of variables, there were more important changes to the NHTS that caused estimation problems. This included the lack of a home type variable, that describes the type of structure (e.g., single family home) that the household lives in and that had been used as an explanatory variable in models in the framework. While this was dealt with in this effort by imputing values for home type based on the relationship between home type and other household variables observed in the survey. A more supportable approach would be to re=specify the models that used that variable. If a user were to attempt to replace the NHTS data with other locally collected household travel survey data, it is likely that the number of missing variables would be higher than one and that additional models would require re-specification.
 
 An additional and more nuanced problem than an entirely missing variable is a change in handling of younger household members in the NHTS and in particular whether there were under 18s in the household who were licensed drivers. A slight change in the dataset led to a estimation error due to a coding assumption based on the structure of the 2001 dataset that no longer held in 2017. While it was ultimately resolved, the error is indicative of potential problems in repurposing code written to work with one dataset. Given the extensive number of models and estimation scripts used throughout the VE system, it was impossible in this effort to carefully step through the estimation of each model with the new dataset, and instead errors in the build process and a review of model results were relied upon to evaluate whether the estimation process was successful.
 
@@ -77,7 +77,7 @@ The VENHTS module is a modified version of the original VE2001NHTS module, which
 2.  Refactors VisionEval to use the more generic VENHTS module rather than the 2001 specific module.
 3.  Generalizes the data ingestion process to make switching between 2001, 2017, and potential future versions more easily.
 
-This document provides an brief overview of how the module functions and how the 2017 data are made backwards compatible with existing 2001 NHTS data framework in VisionEval.
+This document provides a brief overview of how the module functions and how the 2017 data are made backwards compatible with existing 2001 NHTS data framework in VisionEval.
 
 While this module does not "future proof" any future NHTS data releases, or third-party household travel surveys, the purpose is to provide a transparent documentation of methods for users if they wish to format future NHTS data or inject their own datasets.
 
@@ -381,21 +381,21 @@ Below is a summary of build results if `HOMETYPE` is missing.
 
 To provide an overview of NHTS 2001 to 2017 results, below are comparative user_guide/_bookdown_files/15-VENHTS_files/figure-html for each data column between data sets. As expected, most variables do differ between the 2001 and the 2017 data. These are a result of absolute changes in investment in infrastructure and changes in the location and characteristics of the US population. The green color represents the 2017 data while the blue shows the 2001 data.
 
-![](_bookdown_files/15-VENHTS_files/figure-html/hh_plots-1.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/hh_plots-2.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/hh_plots-3.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/hh_plots-4.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/hh_plots-5.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/hh_plots-6.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/hh_plots-7.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/hh_plots-8.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/hh_plots-9.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/hh_plots-10.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/show_figure-1.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/show_figure-2.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/show_figure-3.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/show_figure-4.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/show_figure-5.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/hh_plots-1.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/hh_plots-2.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/hh_plots-3.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/hh_plots-4.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/hh_plots-5.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/hh_plots-6.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/hh_plots-7.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/hh_plots-8.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/hh_plots-9.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/hh_plots-10.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/show_figure-1.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/show_figure-2.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/show_figure-3.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/show_figure-4.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/show_figure-5.png)
 
 ### VE-RSPM Model using 2017 vs 2001
 
@@ -405,19 +405,19 @@ These should not be represented as key travel differences between 2017 and 2001.
 
 However, these charts do provide insights on how the outputs from VE might differ when the input data changes. 
 
-![](_bookdown_files/15-VENHTS_files/figure-html/show_figure2-1.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/show_figure2-2.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/show_figure2-3.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/show_figure2-4.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/show_figure2-5.png)
-![](_bookdown_files/15-VENHTS_files/figure-html/show_figure2-6.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/show_figure2-1.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/show_figure2-2.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/show_figure2-3.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/show_figure2-4.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/show_figure2-5.png)
+![](user_guide/_bookdown_files/15-VENHTS_files/figure-html/show_figure2-6.png)
 
 ### Estimation Comparison
 
 ```{r read_inputs, include=FALSE}
 
 # Diagnostics list object
-estlist <- readRDS("data/LIST_PACKAGES_COMPARE_LIST.RDS")
+estlist <- readRDS("user_guide/data/LIST_PACKAGES_COMPARE_LIST.RDS")
 
 ```
 
