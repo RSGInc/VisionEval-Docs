@@ -849,9 +849,8 @@ This file contains the parking information by `Bzone` for each of the base and f
 * **PkgSpacesPerMFDU**: Average number of free parking spaces available to residents of multifamily dwelling units
 * **PkgSpacesPerGQ**: Average number of free parking spaces available to group quarters residents
 * **PropWkrPay**: Proportion of workers who pay for parking
-* **PropCashOut**: Proportions of workers paying for parking in a cash-out-buy-back program
+* **PropCashOut**: Proportion of workers that participate in a cash-out-buy-back program among those who also pay to park.
 * **PkgCost**: Average daily cost for long-term parking (e.g. paid on monthly basis)
-  
 
 Here is a snapshot of the file:
 ```{r}
@@ -1879,9 +1878,10 @@ This file has the data related to parking costs and population proportions payin
 * **CenterPropWkrPay**: Proportion of workers who pay for parking in center area type
 * **InnerPropWkrPay**: Proportion of workers who pay for parking in inner area type
 * **OuterPropWkrPay**: Proportion of workers who pay for parking in outer area type
-* **CenterPropCashOut**: Proportions of workers paying for parking in a cash-out-buy-back program in center area type
-* **InnerPropCashOut**: Proportions of workers paying for parking in a cash-out-buy-back program in inner area type
-* **OuterPropCashOut**: Proportions of workers paying for parking in a cash-out-buy-back program in outer area type
+*  **CenterPropCashOut**: Proportion of workers that participate in a cash-out-buy-back program among those who also pay to park in the center area type
+* **InnerPropCashOut**: Proportion of workers that participate in a cash-out-buy-back program among those who also pay to park in the inner area type
+
+* **OuterPropCashOut**: Proportion of workers that participate in a cash-out-buy-back program among those who also pay to park in the outer area type
 * **CenterPkgCost**: Average daily cost for long-term parking (e.g. paid on monthly basis) in center area type
 * **InnerPkgCost**: Average daily cost for long-term parking (e.g. paid on monthly basis) in inner area type
 * **OuterPkgCost**: Average daily cost for long-term parking (e.g. paid on monthly basis) in outer area type

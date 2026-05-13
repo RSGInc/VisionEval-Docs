@@ -16,7 +16,6 @@ rmd_files:
   - 05-validation.Rmd
   - 06-verspm.Rmd
   - 07-vestate.Rmd
-  - 08-verpat.Rmd
   - 09-estimation.Rmd
   - 10-build-process.Rmd
   - 11-api.Rmd

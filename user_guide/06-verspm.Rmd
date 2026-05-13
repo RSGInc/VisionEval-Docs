@@ -701,7 +701,7 @@ This file contains the parking information by `Bzone` for each of the base and f
 * **PkgSpacesPerMFDU**: Average number of free parking spaces available to residents of multifamily dwelling units
 * **PkgSpacesPerGQ**: Average number of free parking spaces available to group quarters residents
 * **PropWkrPay**: Proportion of workers who pay for parking
-* **PropCashOut**: Proportions of workers paying for parking in a cash-out-buy-back program
+* **PropCashOut**: Proportion of workers that participate in a cash-out-buy-back program among those who also pay to park
 * **PkgCost**: Average daily cost for long-term parking (e.g. paid on monthly basis)
   
 
